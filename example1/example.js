@@ -53,14 +53,22 @@ function setEvent(canvas) {
             isJumping = true;
             break;
         case "ArrowLeft":
-            theta.Torso -= 5;
+            eye[0] -= 1;
             break;
         case "ArrowRight":
-            theta.Torso += 5;
+            eye[0] += 1;
+            break;
+        case "ArrowUp":
+            eye[1] += 1;
+            break;
+        case "ArrowDown":
+            eye[1] -= 1;
             break;
         case "r":
             resetPose();
             break;
+
+        updateCamera();
     }
 };
 
