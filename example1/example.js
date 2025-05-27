@@ -25,10 +25,10 @@ var stack = [];
 var theta = {
   Torso: 0,
   Head: 15,
-  RULeg: -110, RLLeg: 100, RFoot: -30,
-  LULeg: -110, LLLeg: 100, LFoot: -30,
-  RUArm: 70, RLArm: -20,
-  LUArm: -70, LLArm: 20
+  RULeg: 110, RLLeg: 150, RFoot: -150,
+  LULeg: 110, LLLeg: 150, LFoot: -150,
+  RUArm: -150, RLArm: -20,
+  LUArm: 150, LLArm: 20
 };
 
 // Camera parameters: position (eye), target (at), up direction
@@ -76,9 +76,9 @@ function setCameraView(view) {
 
 // Dimensions for body parts
 const LEG_UPPER_HEIGHT = 3.5, LEG_LOWER_HEIGHT = 3.0;
-const ARM_UPPER_HEIGHT = 1.0, ARM_LOWER_HEIGHT = 0.8;
-const TORSO_HEIGHT = 1.8, TORSO_WIDTH = 4.5;
-const FOOT_HEIGHT = 0.5, LIMB_WIDTH = 0.6;
+const ARM_UPPER_HEIGHT = 2.0, ARM_LOWER_HEIGHT = 1.5;
+const TORSO_HEIGHT = 1.8, TORSO_WIDTH = 3;
+const FOOT_HEIGHT = 3.0, LIMB_WIDTH = 0.6;
 const HEAD_HEIGHT = 1.2, HEAD_WIDTH = 2.0;
 const EYE_RADIUS = 0.3;
 
@@ -90,27 +90,6 @@ function quad(a, b, c, d, vertices) {
         pointsArray.push(vertices[indices[i]]);
         normalsArray.push(normal);
     }
-}
-
-// Create scaling matrix manually
-function scale4(sx, sy, sz) {
-    return mat4(
-        vec4(sx, 0, 0, 0),
-        vec4(0, sy, 0, 0),
-        vec4(0, 0, sz, 0),
-        vec4(0, 0, 0, 1)
-    );
-}
-
-// Build geometry for a cube with given dimensions
-function colorCube(width, height, depth) {
-    let w = width / 2, h = height / 2, d = depth / 2;
-    let v = [
-        vec4(-w,-h, d,1), vec4(-w, h, d,1), vec4( w, h, d,1), vec4( w,-h, d,1),
-        vec4(-w,-h,-d,1), vec4(-w, h,-d,1), vec4( w, h,-d,1), vec4( w,-h,-d,1)
-    ];
-    quad(1,0,3,2,v); quad(2,3,7,6,v); quad(3,0,4,7,v);
-    quad(6,5,1,2,v); quad(4,5,6,7,v); quad(5,4,0,1,v);
 }
 
 // Draw a box centered vertically using modelViewMatrix
@@ -175,6 +154,7 @@ function render() {
     // View transformation with jumping
     modelViewMatrix = lookAt(vec3(eye[0], eye[1], eye[2]), at, up);
     modelViewMatrix = mult(modelViewMatrix, rotateY(theta.Torso));
+    modelViewMatrix = mult(modelViewMatrix, rotateX(-30));
     stack.push(modelViewMatrix);
 
     // Draw torso
@@ -208,6 +188,19 @@ function render() {
     //     theta[key] += Math.random() * 2;
     // }
 
+    const jumpFlag = jumpAngle < 90 ? 1 : -1;
+    if (jumpAngle > 180)
+        jumpAngle = 0;
+    console.log(jumpFlag);
+    theta.LULeg += jumpFlag;
+    theta.LLLeg -= jumpFlag;
+    theta.LFoot += jumpFlag;
+    theta.RULeg += jumpFlag;
+    theta.RLLeg -= jumpFlag;
+    theta.RFoot += jumpFlag;
+    //console.log(theta.LLLeg);
+
+    jumpAngle += 1;
     requestAnimFrame(render);
 }
 
