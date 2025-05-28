@@ -35,8 +35,8 @@ var theta = {
 };
 
 // Camera parameters: position (eye), target (at), up direction
-var eye = vec3(-100.0, 15.0, 15.0);
-var at = vec3(0.0, 0.0, 0.0);
+var eye = vec3(-100.0, 15.0, 35.0);
+var at = vec3(10.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
 // Parameters for potential orbital camera control (currently unused)
@@ -61,10 +61,10 @@ function setEvent(canvas) {
     window.onkeydown = function(event) {
         switch(event.key) {
             case " ": break;
-            case "ArrowLeft": at[0] -= 1; break;
-            case "ArrowRight": at[0] += 1; break;
-            case "ArrowUp": at[1] += 1; break;
-            case "ArrowDown": at[1] -= 1; break;
+            case "ArrowLeft": eye[0] -= 1; break;
+            case "ArrowRight": eye[0] += 1; break;
+            case "ArrowUp": eye[1] += 1; break;
+            case "ArrowDown": eye[1] -= 1; break;
             case "r": break;
         }
     };
@@ -140,7 +140,7 @@ let jumpAngle = 0;
 let jumpFlag = 1;
 let jumpTime = 0;
 const timeStep = 0.05;
-const initialVelocity = { x: 5.0, y: 4.5 };  // x는 전진 속도
+const initialVelocity = { x: 4.0, y: 4.5 };  // x는 전진 속도
 const gravity = 0.98;
 let jumping = true;
 let jumpOrigin = vec3(0, 0, 0);  // 누적 위치 저장
@@ -162,9 +162,18 @@ function degrees(radians) {
     return radians * (180 / Math.PI);
 }
 
+function drawGround() {
+    stack.push(modelViewMatrix);
+    modelViewMatrix = mult(modelViewMatrix, translate(0.0, -0.05, 0.0));
+    drawBox(100.0, 0.1, 100.0);
+    modelViewMatrix = stack.pop();
+}
+
 
 // Main rendering loop
 function render() {
+
+    
     stack = [];
 
     if (jumping) {
@@ -174,7 +183,11 @@ function render() {
     const pos = add(jumpOrigin, offset);
     const torsoAngle = computeTorsoOrientation(jumpTime);
 
+    let cameraOffset = vec3(-10.0, 5.0, 10.0);
+    //eye = subtract(pos, cameraOffset);
+    //at = pos;
     modelViewMatrix = lookAt(eye, at, up);
+    drawGround();
     modelViewMatrix = mult(modelViewMatrix, translate(pos[2], pos[1], pos[0]));
     modelViewMatrix = mult(modelViewMatrix, rotateX(-torsoAngle));  // ← 여기 핵심
     modelViewMatrix = mult(modelViewMatrix, rotateY(theta.Torso)); // 기존 회전 유지
@@ -226,10 +239,8 @@ function render() {
         jumpTime = 0;
         jumping = true; // 반복 점프
     }
-    
-    at = vec3(pos[0], pos[1], pos[2]);
     console.log("x:", at[0], "y: ", at[1], "z: ", at[2]);
-    
+
     jumpAngle += jumpFlag;
     
     requestAnimFrame(render);
