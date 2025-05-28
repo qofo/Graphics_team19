@@ -8,6 +8,9 @@ var modelViewMatrix, projectionMatrix;
 var modelViewMatrixLoc, projectionMatrixLoc;
 var normalMatrixLoc;
 
+var modelMat, modelMatLoc;
+var viewMat, viewMatLoc;
+
 // Canvas element
 var canvas;
 
@@ -24,15 +27,15 @@ var stack = [];
 // Angles for each body part in degrees (used for animation and posing)
 var theta = {
   Torso: 0,
-  Head: 15,
-  RULeg: 110, RLLeg: 150, RFoot: -150,
+  Head: 0,
+  RULeg: 110, RLLeg: 150, RFoot: -150,  
   LULeg: 110, LLLeg: 150, LFoot: -150,
   RUArm: -150, RLArm: -20,
   LUArm: 150, LLArm: 20
 };
 
 // Camera parameters: position (eye), target (at), up direction
-var eye = vec3(6.0, 4.0, 12.0);
+var eye = vec3(-100.0, 15.0, 15.0);
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
 
@@ -58,11 +61,11 @@ function setEvent(canvas) {
     window.onkeydown = function(event) {
         switch(event.key) {
             case " ": break;
-            case "ArrowLeft": eye[0] -= 1; break;
-            case "ArrowRight": eye[0] += 1; break;
-            case "ArrowUp": eye[1] += 1; break;
-            case "ArrowDown": eye[1] -= 1; break;
-            case "r": resetPose(); break;
+            case "ArrowLeft": at[0] -= 1; break;
+            case "ArrowRight": at[0] += 1; break;
+            case "ArrowUp": at[1] += 1; break;
+            case "ArrowDown": at[1] -= 1; break;
+            case "r": break;
         }
     };
 }
@@ -82,15 +85,7 @@ const FOOT_HEIGHT = 3.0, LIMB_WIDTH = 0.6;
 const HEAD_HEIGHT = 1.2, HEAD_WIDTH = 2.0;
 const EYE_RADIUS = 0.3;
 
-// Construct one face of the cube and store vertex and normal data
-function quad(a, b, c, d, vertices) {
-    let indices = [a, b, c, a, c, d];
-    let normal = normalize(cross(subtract(vertices[b], vertices[a]), subtract(vertices[c], vertices[b])));
-    for (let i = 0; i < indices.length; ++i) {
-        pointsArray.push(vertices[indices[i]]);
-        normalsArray.push(normal);
-    }
-}
+
 
 // Draw a box centered vertically using modelViewMatrix
 function drawBox(width, height, depth) {
@@ -142,26 +137,56 @@ function drawArm(transform, upperAngle, lowerAngle) {
 
 // Angle for jumping animation
 let jumpAngle = 0;
+let jumpFlag = 1;
+let jumpTime = 0;
+const timeStep = 0.05;
+const initialVelocity = { x: 5.0, y: 4.5 };  // x는 전진 속도
+const gravity = 0.98;
+let jumping = true;
+let jumpOrigin = vec3(0, 0, 0);  // 누적 위치 저장
+
+function computeTorsoPosition(t) {
+    const x = initialVelocity.x * t;
+    const y = initialVelocity.y * t - 0.5 * gravity * t * t;
+    return vec3(x, Math.max(0, y), 0);
+}
+
+function computeTorsoOrientation(t) {
+    const vx = initialVelocity.x;
+    const vy = initialVelocity.y - gravity * t;
+    if (vx === 0) return 0;
+    return degrees(Math.atan2(vy, vx));  // Z축 기준 회전각 (pitch)
+}
+
+function degrees(radians) {
+    return radians * (180 / Math.PI);
+}
+
 
 // Main rendering loop
 function render() {
     stack = [];
 
-    // // Simple jumping effect using sine wave
-    // let jumpHeight = Math.abs(Math.sin(radians(jumpAngle))) * 1.5;
-    // jumpAngle = (jumpAngle + 2.0) % 360;
+    if (jumping) {
+    jumpTime += timeStep;
+}
+    const offset = computeTorsoPosition(jumpTime);
+    const pos = add(jumpOrigin, offset);
+    const torsoAngle = computeTorsoOrientation(jumpTime);
 
-    // View transformation with jumping
-    modelViewMatrix = lookAt(vec3(eye[0], eye[1], eye[2]), at, up);
-    modelViewMatrix = mult(modelViewMatrix, rotateY(theta.Torso));
-    modelViewMatrix = mult(modelViewMatrix, rotateX(-30));
+    modelViewMatrix = lookAt(eye, at, up);
+    modelViewMatrix = mult(modelViewMatrix, translate(pos[2], pos[1], pos[0]));
+    modelViewMatrix = mult(modelViewMatrix, rotateX(-torsoAngle));  // ← 여기 핵심
+    modelViewMatrix = mult(modelViewMatrix, rotateY(theta.Torso)); // 기존 회전 유지
+    //modelViewMatrix = mult(modelViewMatrix, rotateX(-30));
+
     stack.push(modelViewMatrix);
 
     // Draw torso
     drawBox(TORSO_WIDTH, TORSO_HEIGHT, TORSO_WIDTH);
 
     // Draw head
-    modelViewMatrix = mult(modelViewMatrix, translate(0, TORSO_HEIGHT, 0));
+    modelViewMatrix = mult(modelViewMatrix, translate(0, TORSO_HEIGHT, 1));
     modelViewMatrix = mult(modelViewMatrix, rotateY(theta.Head));
     stack.push(modelViewMatrix);
     drawBox(HEAD_WIDTH, HEAD_HEIGHT, HEAD_WIDTH);
@@ -183,83 +208,79 @@ function render() {
 
     modelViewMatrix = stack.pop();
 
-    // Slight random pose change per frame (for subtle motion)
-    // for (let key in theta){
-    //     theta[key] += Math.random() * 2;
-    // }
-
-    const jumpFlag = jumpAngle < 90 ? 1 : -1;
-    if (jumpAngle > 180)
-        jumpAngle = 0;
-    console.log(jumpFlag);
+    if (jumpAngle > 120)
+        jumpFlag = -1;
+    else if (jumpAngle < 0)
+        jumpFlag = 1;
     theta.LULeg += jumpFlag;
     theta.LLLeg -= jumpFlag;
     theta.LFoot += jumpFlag;
     theta.RULeg += jumpFlag;
     theta.RLLeg -= jumpFlag;
     theta.RFoot += jumpFlag;
-    //console.log(theta.LLLeg);
+    //console.log(jumpAngle);
 
-    jumpAngle += 1;
+    // 포물선 끝나면 다시 점프하도록 설정 (선택 사항)
+    if (pos[1] <= 0.01 && jumpTime > 1) {
+        jumpOrigin = add(jumpOrigin, offset);
+        jumpTime = 0;
+        jumping = true; // 반복 점프
+    }
+    
+    at = vec3(pos[0], pos[1], pos[2]);
+    console.log("x:", at[0], "y: ", at[1], "z: ", at[2]);
+    
+    jumpAngle += jumpFlag;
+    
     requestAnimFrame(render);
 }
 
-// Entry point: setup WebGL and start rendering
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) alert("WebGL isn't available");
 
-    // Generate cube geometry
     colorCube(1, 1, 1);
 
-    // Create buffer for vertex positions
     let bufferId = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
 
-    // Create buffer for normals
     let nBufferId = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, nBufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
 
-    // Initialize shaders
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
-    // Bind position data to shader
     let vPosition = gl.getAttribLocation(program, "vPosition");
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
-    // Bind normal data to shader
     let vNormal = gl.getAttribLocation(program, "vNormal");
     gl.bindBuffer(gl.ARRAY_BUFFER, nBufferId);
     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vNormal);
 
-    // Get uniform locations for matrices
     modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
     projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
     normalMatrixLoc = gl.getUniformLocation(program, "normalMatrix");
 
-    // Set lighting uniforms
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"), flatten(mult(lightAmbient, materialAmbient)));
     gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"), flatten(mult(lightDiffuse, materialDiffuse)));
     gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"), flatten(mult(lightSpecular, materialSpecular)));
     gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
     gl.uniform1f(gl.getUniformLocation(program, "shininess"), materialShininess);
 
-    // Enable depth testing and set background color
     gl.enable(gl.DEPTH_TEST);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    // Set perspective projection matrix
     projectionMatrix = perspective(45, canvas.width / canvas.height, 0.1, 100.0);
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
     setEvent(canvas);
     render();
 };
+
