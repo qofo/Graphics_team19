@@ -1,4 +1,3 @@
-Computer Graphics(F104) Final Team Project
 ---
 ### Team 19
 | Name  | Role                |
@@ -9,18 +8,19 @@ Computer Graphics(F104) Final Team Project
 ---
 ### TODO
 ### 1. Modeling
+#### Frog Modeling
 - [x] Build frog using box hierarchy
 - [ ] Adjust size/proportion to resemble frog
-- [ ] Add eyes, mouth, foot detail
-- [ ] Add floor object
-
+- [ ] Add ~~eyes~~, mouth, foot detail
+#### ETC.
+- [x] Add floor object
 ### 2. User Interaction
 - [ ] A. Implement camera orbit with mouse
-- [ ] B. Implement jump direction/distance input (e.g., drag angle & power)
+- [ ] B. Implement jump direction/distance input with keyboard
 
 ### 3. Animation
-- [ ] Design keyframes: which joints, what angle range
-- [ ] Implement jump motion over time (timing function)
+- [x] Design keyframes: which joints, what angle range
+- [x] Implement jump motion over time (timing function)
 
 ### 4. Lighting
 - [x] Set up ambient + diffuse + specular lighting
@@ -32,8 +32,16 @@ Computer Graphics(F104) Final Team Project
 
 ### 6. (Optional) Shadow
 - [ ] Global directional shadow (advanced)
+
+### 7. Presentation Material
+- [ ] Make ppt slides(can be revised after submission)
+
+### 8. Demo Video
+- [ ] Make demo video
+
 ---
-Torso 	
+### Hierarchy
+- Torso 	
 	- right upper leg – right lower leg – right foot
 	- left upper leg – left lower leg – left foot
 	- head
