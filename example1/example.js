@@ -68,6 +68,7 @@ function setEvent(canvas) {
             case "ArrowUp": eye[1] += 1; break;     // Move camera upward
             case "ArrowDown": eye[1] -= 1; break;   // Move camera downward
             case "r": break;  // (Reserved for pose reset)
+            case "x": jumping = true; break;
         }
     };
 }
@@ -144,7 +145,6 @@ function drawArm(transform, upperAngle, lowerAngle) {
 }
 
 // Variables controlling jump animation logic
-let jumpAngle = 0;         // (Currently unused) angle for jump rotation
 let jumpFlag = 1;          // Direction flag for alternating leg motion
 let jumpTime = 0;          // Time elapsed since start of current jump
 
@@ -272,43 +272,31 @@ function render() {
 
     // Update joint angles for leg animation during jump
     const highTime = initialVelocity.y / gravity;
-    if (jumpTime < highTime)
-        jumpFlag = 1;
-    else
-        jumpFlag = -1;
+    if (jumping) {
+        
+        if (jumpTime < highTime)
+            jumpFlag = 1;
+        else
+            jumpFlag = -1;
 
-    theta.LULeg += jumpFlag;
-    theta.LLLeg -= jumpFlag;
-    theta.LFoot += jumpFlag;
-    theta.RULeg += jumpFlag;
-    theta.RLLeg -= jumpFlag;
-    theta.RFoot += jumpFlag;
+        theta.LULeg += jumpFlag;
+        theta.LLLeg -= jumpFlag;
+        theta.LFoot += jumpFlag;
+        theta.RULeg += jumpFlag;
+        theta.RLLeg -= jumpFlag;
+        theta.RFoot += jumpFlag;
+    }
 
     // When landing, reset for next jump cycle
     if (pos[1] <= 0.01 && jumpTime > highTime) {
         jumpOrigin = add(jumpOrigin, offset);
         jumpTime = 0;
-        // jumping = false; // Uncomment to stop jumping after one cycle
+         jumping = false; // Uncomment to stop jumping after one cycle
     }
 
-    console.log("x:", at[0], "y: ", at[1], "z: ", at[2]);
+    //console.log("x:", at[0], "y: ", at[1], "z: ", at[2]);
 
     requestAnimFrame(render);  // Schedule the next frame
-}
-
-// Adjust joint angles based on jump phase (used for procedural animation)
-function animateLegs(t) {
-    const kneeBend = 30 * Math.sin(Math.PI * t);        // Bend knees
-    const hipLift = 20 * Math.sin(Math.PI * t);         // Lift legs upward
-    const footSwing = 10 * Math.sin(2 * Math.PI * t);   // Swing feet
-
-    theta.LULeg = 110 + hipLift;
-    theta.LLLeg = 150 - kneeBend;
-    theta.LFoot = -150 + footSwing;
-
-    theta.RULeg = 110 + hipLift;
-    theta.RLLeg = 150 - kneeBend;
-    theta.RFoot = -150 + footSwing;
 }
 
 // Initialization function: sets up WebGL context, shaders, buffers, and begins render loop
