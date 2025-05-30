@@ -44,7 +44,7 @@ class PhysicsSystem {
     computePosition(time) {
         const x = this.initialVelocity.x * time;
         const y = this.initialVelocity.y * time - 0.5 * this.gravity * time * time;
-        return vec3(x, Math.max(0, y), 0);
+        return vec3(0, Math.max(0, y), x);
     }
     
     computeOrientation(time) {
@@ -121,6 +121,7 @@ class CameraController {
         this.isDragging = false;
         this.lastMouse = { x: 0, y: 0 };
     }
+    
 
 
     bindToCanvas(canvas, getTargetPosition) {
@@ -164,7 +165,7 @@ class CameraController {
         const y = this.target[1] + this.distance * Math.sin(radPhi);
         const z = this.target[2] + this.distance * Math.cos(radTheta) * Math.cos(radPhi);
 
-        this.eye = vec3(z, y, x);
+        this.eye = vec3(x, y, z);
         console.log(this.eye[0], this.eye[1], this.eye[2]);
         return lookAt(this.eye, this.target, this.up);
     }

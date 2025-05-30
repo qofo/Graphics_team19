@@ -70,7 +70,7 @@ class Character3D {
         const { torso, head, leg, arm } = CONFIG.bodyParts;
         
         // Apply camera view and character transform
-        let modelViewMatrix = mult(viewMatrix, translate(this.position[2], this.position[1], this.position[0]));
+        let modelViewMatrix = mult(viewMatrix, translate(this.position[0], this.position[1], this.position[2]));
         modelViewMatrix = mult(modelViewMatrix, rotateX(-this.orientation));
         modelViewMatrix = mult(modelViewMatrix, rotateY(this.jointController.getAngle('torso')));
         
