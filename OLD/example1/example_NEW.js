@@ -1,5 +1,153 @@
 "use strict";
 
+// Configuration object for centralized settings management
+const CONFIG = {
+    bodyParts: {
+        torso: { width: 3, height: 1.8, depth: 3 },
+        head: { width: 2.0, height: 1.2, depth: 2.0 },
+        leg: { upperHeight: 3.5, lowerHeight: 3.0, width: 0.6 },
+        arm: { upperHeight: 2.0, lowerHeight: 1.5, width: 0.6 },
+        foot: { height: 3.0 },
+        eye: { radius: 0.3 }
+    },
+    physics: {
+        gravity: 0.5,
+        initialVelocity: { x: 3.0, y: 4.5 },
+        timeStep: 0.05
+    },
+    lighting: {
+        position: [1.0, 1.0, 1.0, 0.0],
+        ambient: [0.2, 0.2, 0.2, 1.0],
+        diffuse: [1.0, 1.0, 0.8, 1.0],
+        specular: [1.0, 1.0, 1.0, 1.0]
+    },
+    material: {
+        ambient: [0.3, 0.6, 0.0, 1.0],
+        diffuse: [0.4, 0.8, 0.4, 1.0],
+        specular: [0.2, 0.4, 0.2, 1.0],
+        shininess: 30.0
+    },
+    camera: {
+        eye: [-80.0, 15.0, 35.0],
+        at: [10.0, 0.0, 0.0],
+        up: [0.0, 1.0, 0.0]
+    }
+};
+
+// WebGL Renderer class for managing rendering operations
+class WebGLRenderer {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.gl = this.initWebGL();
+        this.program = null;
+        this.matrixStack = [];
+        this.numVertices = 36;
+        
+        // Matrix uniform locations
+        this.uniformLocations = {};
+        
+        // Geometry data
+        this.pointsArray = [];
+        this.normalsArray = [];
+    }
+    
+    initWebGL() {
+        const gl = WebGLUtils.setupWebGL(this.canvas);
+        if (!gl) {
+            throw new Error("WebGL is not supported in this browser");
+        }
+        return gl;
+    }
+    
+    initShaders() {
+        this.program = initShaders(this.gl, "vertex-shader", "fragment-shader");
+        if (!this.program) {
+            throw new Error("Failed to initialize shaders");
+        }
+        this.gl.useProgram(this.program);
+        
+        // Cache uniform locations
+        this.uniformLocations = {
+            modelViewMatrix: this.gl.getUniformLocation(this.program, "modelViewMatrix"),
+            projectionMatrix: this.gl.getUniformLocation(this.program, "projectionMatrix"),
+            normalMatrix: this.gl.getUniformLocation(this.program, "normalMatrix"),
+            ambientProduct: this.gl.getUniformLocation(this.program, "ambientProduct"),
+            diffuseProduct: this.gl.getUniformLocation(this.program, "diffuseProduct"),
+            specularProduct: this.gl.getUniformLocation(this.program, "specularProduct"),
+            lightPosition: this.gl.getUniformLocation(this.program, "lightPosition"),
+            shininess: this.gl.getUniformLocation(this.program, "shininess")
+        };
+    }
+    
+    setupBuffers() {
+        // Create and fill vertex buffer
+        const vertexBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(this.pointsArray), this.gl.STATIC_DRAW);
+        
+        // Create and fill normal buffer
+        const normalBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, flatten(this.normalsArray), this.gl.STATIC_DRAW);
+        
+        // Link vertex attributes
+        const vPosition = this.gl.getAttribLocation(this.program, "vPosition");
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
+        this.gl.vertexAttribPointer(vPosition, 4, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(vPosition);
+        
+        const vNormal = this.gl.getAttribLocation(this.program, "vNormal");
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
+        this.gl.vertexAttribPointer(vNormal, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(vNormal);
+    }
+    
+    setupLighting() {
+        const { lighting, material } = CONFIG;
+        
+        this.gl.uniform4fv(this.uniformLocations.ambientProduct, 
+            flatten(mult(vec4(...lighting.ambient), vec4(...material.ambient))));
+        this.gl.uniform4fv(this.uniformLocations.diffuseProduct, 
+            flatten(mult(vec4(...lighting.diffuse), vec4(...material.diffuse))));
+        this.gl.uniform4fv(this.uniformLocations.specularProduct, 
+            flatten(mult(vec4(...lighting.specular), vec4(...material.specular))));
+        this.gl.uniform4fv(this.uniformLocations.lightPosition, 
+            flatten(vec4(...lighting.position)));
+        this.gl.uniform1f(this.uniformLocations.shininess, material.shininess);
+    }
+    
+    setProjectionMatrix(matrix) {
+        this.gl.uniformMatrix4fv(this.uniformLocations.projectionMatrix, false, flatten(matrix));
+    }
+    
+    setModelViewMatrix(matrix) {
+        this.gl.uniformMatrix4fv(this.uniformLocations.modelViewMatrix, false, flatten(matrix));
+        
+        const normalMatrix = transpose(inverse4(matrix));
+        this.gl.uniformMatrix4fv(this.uniformLocations.normalMatrix, false, flatten(normalMatrix));
+    }
+    
+    drawBox(width, height, depth, transform) {
+        const instanceMatrix = mult(transform, translate(0.0, 0.5 * height, 0.0));
+        const scaledMatrix = mult(instanceMatrix, scale4(width, height, depth));
+        
+        this.setModelViewMatrix(scaledMatrix);
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, this.numVertices);
+    }
+    
+    pushMatrix(matrix) {
+        this.matrixStack.push(mat4(matrix));
+    }
+    
+    popMatrix() {
+        return this.matrixStack.pop();
+    }
+    
+    clear() {
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    }
+}
+
 // Joint Controller for managing character joint angles
 class JointController {
     constructor() {
@@ -108,69 +256,34 @@ class AnimationController {
     }
 }
 
+// Camera Controller for managing camera movement
 class CameraController {
-
     constructor(config = CONFIG.camera) {
-        this.distance = 50;  // 모델과의 거리
-        this.theta = 180;    // 모델의 뒤쪽에서 시작
-        this.phi = 30;       // 위에서 내려다보는 각도
-        this.zoomSpeed = 2;
-
-        this.target = vec3(...config.at);
+        this.eye = vec3(...config.eye);
+        this.at = vec3(...config.at);
         this.up = vec3(...config.up);
-
-        this.isDragging = false;
-        this.lastMouse = { x: 0, y: 0 };
     }
-
-
-    bindToCanvas(canvas, getTargetPosition) {
-        this.getTargetPosition = getTargetPosition;
-        canvas.addEventListener("mousedown", (e) => {
-            this.isDragging = true;
-            this.lastMouse = { x: e.clientX, y: e.clientY };
-        });
-
-        canvas.addEventListener("mousemove", (e) => {
-            if (this.isDragging) {
-                const dx = e.clientX - this.lastMouse.x;
-                const dy = e.clientY - this.lastMouse.y;
-
-                this.theta += dx * 0.5;
-                this.phi = Math.min(89, Math.max(1, this.phi - dy * 0.5));
-
-                this.lastMouse = { x: e.clientX, y: e.clientY };
-            }
-        });
-
-        canvas.addEventListener("mouseup", () => {
-            this.isDragging = false;
-        });
-
-        canvas.addEventListener("wheel", (e) => {
-            this.distance += e.deltaY * 0.05;
-            this.distance = Math.max(5, Math.min(200, this.distance));
-        });
+    
+    moveLeft(distance = 1) {
+        this.eye[0] -= distance;
     }
-
+    
+    moveRight(distance = 1) {
+        this.eye[0] += distance;
+    }
+    
+    moveUp(distance = 1) {
+        this.eye[1] += distance;
+    }
+    
+    moveDown(distance = 1) {
+        this.eye[1] -= distance;
+    }
+    
     getViewMatrix() {
-        const radTheta = this.theta * Math.PI / 180;
-        const radPhi = this.phi * Math.PI / 180;
-
-        if (this.getTargetPosition) {
-            this.target = this.getTargetPosition();
-        }
-
-        const x = this.target[0] + this.distance * Math.sin(radTheta) * Math.cos(radPhi);
-        const y = this.target[1] + this.distance * Math.sin(radPhi);
-        const z = this.target[2] + this.distance * Math.cos(radTheta) * Math.cos(radPhi);
-
-        this.eye = vec3(z, y, x);
-        console.log(this.eye[0], this.eye[1], this.eye[2]);
-        return lookAt(this.eye, this.target, this.up);
+        return lookAt(this.eye, this.at, this.up);
     }
 }
-
 
 // Character class for rendering the 3D character
 class Character3D {
@@ -403,8 +516,6 @@ class Character3DApp {
             this.physicsSystem = new PhysicsSystem();
             this.animationController = new AnimationController(this.jointController, this.physicsSystem);
             this.cameraController = new CameraController();
-            this.cameraController.bindToCanvas(this.renderer.canvas, () => this.character.position);
-
             this.inputManager = new InputManager();
             
             // Create scene objects
