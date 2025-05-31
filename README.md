@@ -1,11 +1,11 @@
----
 ### Team 19
 | Name  | Role                |
 | ----- | ------------------- |
-| 이준서   | Animation, Lighting |
+| 이준서 | Animation, Lighting |
 | Ensio | Modeling,           |
 
 ---
+
 ### TODO
 ### 1. Modeling
 #### Frog Modeling
@@ -14,9 +14,12 @@
 - [ ] Add ~~eyes~~, mouth, foot detail
 #### ETC.
 - [x] Add floor object
+- [ ] Make infinite floor object in Z+ position
+
 ### 2. User Interaction
-- [ ] A. Implement camera orbit with mouse
-- [ ] B. Implement jump direction/distance input with keyboard
+- [X] A. Implement camera orbit with mouse
+- [X] B. Implement jump direction/distance input with keyboard
+- [ ] Game over handling
 
 ### 3. Animation
 - [x] Design keyframes: which joints, what angle range
@@ -34,12 +37,13 @@
 - [ ] Global directional shadow (advanced)
 
 ### 7. Presentation Material
-- [ ] Make ppt slides(can be revised after submission)
+- [ ] Make ppt slides (can be revised after submission)
 
 ### 8. Demo Video
 - [ ] Make demo video
 
 ---
+
 ### Hierarchy
 - Torso 	
 	- right upper leg – right lower leg – right foot
@@ -47,5 +51,5 @@
 	- head
 	- left upper arm – left lower arm – (hand?)
 	- right upper arm – right lower arm – (hand?)
- 
- Each of them has just 1 Degree of Freedom.
+
+Each of them has just 1 Degree of Freedom.
