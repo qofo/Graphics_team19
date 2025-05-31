@@ -71,8 +71,10 @@ class Character3D {
         
         // Apply camera view and character transform
         let modelViewMatrix = mult(viewMatrix, translate(this.position[0], this.position[1], this.position[2]));
-        modelViewMatrix = mult(modelViewMatrix, rotateX(-this.orientation));
-        modelViewMatrix = mult(modelViewMatrix, rotateY(this.jointController.getAngle('torso')));
+        modelViewMatrix = mult(modelViewMatrix, rotateY(this.jointController.getAngle('torsoY')));
+        const torsoX = this.jointController.getAngle('torsoX') - this.orientation;
+        modelViewMatrix = mult(modelViewMatrix, rotateX(torsoX));
+
         
         this.renderer.pushMatrix(modelViewMatrix);
         

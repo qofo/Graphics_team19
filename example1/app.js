@@ -87,6 +87,7 @@ class Character3DApp {
     
     setupInput() {
         this.inputManager.on('keydown', (keyCode) => {
+            const ROTATE_SPEED = 2;
             switch(keyCode) {
                 case 'ArrowLeft':
                     this.cameraController.moveLeft();
@@ -100,11 +101,24 @@ class Character3DApp {
                 case 'ArrowDown':
                     this.cameraController.moveDown();
                     break;
-                case 'KeyX':
-                    this.animationController.toggleJump();
+                case 'Space':
+                case ' ':
+                    this.animationController.triggerJump();
                     break;
                 case 'KeyR':
                     this.reset();
+                    break;
+                case 'KeyW':
+                    this.jointController.angles.torsoX -= ROTATE_SPEED;
+                    break;
+                case 'KeyS':
+                    this.jointController.angles.torsoX += ROTATE_SPEED;
+                    break;
+                case 'KeyA':
+                    this.jointController.angles.torsoY += ROTATE_SPEED;
+                    break;
+                case 'KeyD':
+                    this.jointController.angles.torsoY -= ROTATE_SPEED;
                     break;
             }
         });

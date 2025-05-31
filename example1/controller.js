@@ -3,7 +3,8 @@
 class JointController {
     constructor() {
         this.angles = {
-            torso: 0,
+            torsoY: 0,
+            torsoX: 0,
             head: 0,
             rightUpperLeg: 110, rightLowerLeg: 150, rightFoot: -150,
             leftUpperLeg: 110, leftLowerLeg: 150, leftFoot: -150,
@@ -41,10 +42,32 @@ class PhysicsSystem {
         this.timeStep = config.timeStep;
     }
     
-    computePosition(time) {
+    computePositionOrigin(time, torsoX, torsoY) {
         const x = this.initialVelocity.x * time;
         const y = this.initialVelocity.y * time - 0.5 * this.gravity * time * time;
         return vec3(0, Math.max(0, y), x);
+    }
+
+    computePosition(time, torsoX, torsoY) {
+        // const x = this.initialVelocity.x * time;
+        // const y = this.initialVelocity.y * time - 0.5 * this.gravity * time * time;
+        // return vec3(0, Math.max(0, y), x);
+
+        const v = this.initialVelocity;
+
+        // 각도 → 라디안 변환
+        const radY = torsoY * Math.PI / 180;
+        const radX = torsoX * Math.PI / 180;
+
+        // 수평면을 x축으로 pitch (상하 기울기)
+        const vy = v.x * Math.sin(radX) + v.y;  // pitch가 양수면 수직 속도가 더 커짐
+        const v_horizontal = v.x * Math.cos(radX);
+
+        const x = v_horizontal * Math.cos(radY) * time;
+        const z = v_horizontal * Math.sin(radY) * time;
+        const y = vy * time - 0.5 * this.gravity * time * time;
+
+        return vec3(z, Math.max(0, y), x);
     }
     
     computeOrientation(time) {
@@ -68,7 +91,7 @@ class AnimationController {
     constructor(jointController, physicsSystem) {
         this.jointController = jointController;
         this.physicsSystem = physicsSystem;
-        this.isJumping = true;
+        this.isJumping = false;
         this.jumpTime = 0;
         this.jumpOrigin = vec3(0, 0, 0);
         this.jumpDirection = 1;
@@ -85,16 +108,20 @@ class AnimationController {
         this.jointController.updateJumpAngles(this.jumpDirection);
         
         // Check for landing
-        const currentPos = this.physicsSystem.computePosition(this.jumpTime);
+        const torsoX = this.jointController.getAngle('torsoX');
+        const torsoY = this.jointController.getAngle('torsoY');
+        const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
         if (currentPos[1] <= 0.01 && this.jumpTime > apexTime) {
             this.jumpOrigin = add(this.jumpOrigin, currentPos);
             this.jumpTime = 0;
-            // this.isJumping = false; // Uncomment to stop after one jump
+            this.isJumping = false; // Uncomment to stop after one jump
         }
     }
     
     getCurrentPosition() {
-        const offset = this.physicsSystem.computePosition(this.jumpTime);
+        const torsoX = this.jointController.getAngle('torsoX');
+        const torsoY = this.jointController.getAngle('torsoY');
+        const offset = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
         return add(this.jumpOrigin, offset);
     }
     
@@ -102,8 +129,11 @@ class AnimationController {
         return this.physicsSystem.computeOrientation(this.jumpTime);
     }
     
-    toggleJump() {
-        this.isJumping = !this.isJumping;
+    triggerJump() {
+        if (!this.isJumping) {
+            this.isJumping = true;
+            this.jumpTime = 0;
+        }
     }
 }
 
@@ -166,7 +196,7 @@ class CameraController {
         const z = this.target[2] + this.distance * Math.cos(radTheta) * Math.cos(radPhi);
 
         this.eye = vec3(x, y, z);
-        console.log(this.eye[0], this.eye[1], this.eye[2]);
+        //console.log(this.eye[0], this.eye[1], this.eye[2]);
         return lookAt(this.eye, this.target, this.up);
     }
 }
