@@ -31,6 +31,15 @@ const CONFIG = {
         eye: [-80.0, 15.0, 35.0],
         at: [10.0, 0.0, 0.0],
         up: [0.0, 1.0, 0.0]
+    },
+    initialJointAngles: {
+            torsoY: 0,
+            torsoX: 0,
+            head: 0,
+            rightUpperLeg: 110, rightLowerLeg: 150, rightFoot: -150,
+            leftUpperLeg: 110, leftLowerLeg: 150, leftFoot: -150,
+            rightUpperArm: -150, rightLowerArm: -20,
+            leftUpperArm: 150, leftLowerArm: 20
     }
 };
 
@@ -128,6 +137,8 @@ class Character3DApp {
         this.animationController.jumpTime = 0;
         this.animationController.jumpOrigin = vec3(0, 0, 0);
         this.animationController.isJumping = false;
+
+        this.jointController.angles = {... CONFIG.initialJointAngles};
     }
     
     update() {

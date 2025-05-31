@@ -3,13 +3,7 @@
 class JointController {
     constructor() {
         this.angles = {
-            torsoY: 0,
-            torsoX: 0,
-            head: 0,
-            rightUpperLeg: 110, rightLowerLeg: 150, rightFoot: -150,
-            leftUpperLeg: 110, leftLowerLeg: 150, leftFoot: -150,
-            rightUpperArm: -150, rightLowerArm: -20,
-            leftUpperArm: 150, leftLowerArm: 20
+            ...CONFIG.initialJointAngles
         };
     }
     
@@ -42,7 +36,7 @@ class PhysicsSystem {
         this.timeStep = config.timeStep;
     }
     
-    computePositionOrigin(time, torsoX, torsoY) {
+    computePositionOrigin(time) {
         const x = this.initialVelocity.x * time;
         const y = this.initialVelocity.y * time - 0.5 * this.gravity * time * time;
         return vec3(0, Math.max(0, y), x);
@@ -111,10 +105,17 @@ class AnimationController {
         const torsoX = this.jointController.getAngle('torsoX');
         const torsoY = this.jointController.getAngle('torsoY');
         const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
+
+        console.log(currentPos);
+
         if (currentPos[1] <= 0.01 && this.jumpTime > apexTime) {
             this.jumpOrigin = add(this.jumpOrigin, currentPos);
             this.jumpTime = 0;
             this.isJumping = false; // Uncomment to stop after one jump
+
+            this.jointController.angles = { ...CONFIG.initialJointAngles};
+            this.jointController.angles.torsoX = torsoX;
+            this.jointController.angles.torsoY = torsoY;
         }
     }
     
