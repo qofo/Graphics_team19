@@ -96,7 +96,6 @@ class Character3DApp {
     
     setupInput() {
         this.inputManager.on('keydown', (keyCode) => {
-            const ROTATE_SPEED = 2;
             switch(keyCode) {
                 case 'ArrowLeft':
                     this.cameraController.moveLeft();
@@ -117,18 +116,6 @@ class Character3DApp {
                 case 'KeyR':
                     this.reset();
                     break;
-                case 'KeyW':
-                    this.jointController.angles.torsoX -= ROTATE_SPEED;
-                    break;
-                case 'KeyS':
-                    this.jointController.angles.torsoX += ROTATE_SPEED;
-                    break;
-                case 'KeyA':
-                    this.jointController.angles.torsoY += ROTATE_SPEED;
-                    break;
-                case 'KeyD':
-                    this.jointController.angles.torsoY -= ROTATE_SPEED;
-                    break;
             }
         });
     }
@@ -143,7 +130,28 @@ class Character3DApp {
     
     update() {
         this.animationController.update();
+
+        const ROTATE_SPEED = 0.5;
+        if (this.inputManager.isKeyPressed('KeyW')) {
+            this.jointController.angles.torsoX -= ROTATE_SPEED;
+        }
+        if (this.inputManager.isKeyPressed('KeyS')) {
+            this.jointController.angles.torsoX += ROTATE_SPEED;
+        }
+        if (this.inputManager.isKeyPressed('KeyA')) {
+            this.jointController.angles.torsoY += ROTATE_SPEED;
+        }
+        if (this.inputManager.isKeyPressed('KeyD')) {
+            this.jointController.angles.torsoY -= ROTATE_SPEED;
+        }
+        this.jointController.angles.torsoX = Math.max(-30, Math.min(30, this.jointController.angles.torsoX));
         
+        if (this.character.position[1] <= -0.1) {
+            // 추락 판정
+            //this.gameOver();  // 게임 종료창 띄우기
+            this.reset();  // 다시 원래 위치로
+        }
+
         // Update character position and orientation
         this.character.setPosition(this.animationController.getCurrentPosition());
         this.character.setOrientation(this.animationController.getCurrentOrientation());

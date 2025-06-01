@@ -50,8 +50,8 @@ class PhysicsSystem {
         const v = this.initialVelocity;
 
         // 각도 → 라디안 변환
-        const radY = torsoY * Math.PI / 180;
-        const radX = torsoX * Math.PI / 180;
+        const radY = (torsoY % 360) * Math.PI / 180;
+        const radX = (torsoX % 360) * Math.PI / 180;
 
         // 수평면을 x축으로 pitch (상하 기울기)
         const vy = v.x * Math.sin(radX) + v.y;  // pitch가 양수면 수직 속도가 더 커짐
@@ -105,10 +105,10 @@ class AnimationController {
         const torsoX = this.jointController.getAngle('torsoX');
         const torsoY = this.jointController.getAngle('torsoY');
         const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
-
+        
         console.log(currentPos);
 
-        if (currentPos[1] <= 0.01 && this.jumpTime > apexTime) {
+        if (this.jumpTime > 2 * apexTime+1) {
             this.jumpOrigin = add(this.jumpOrigin, currentPos);
             this.jumpTime = 0;
             this.isJumping = false; // Uncomment to stop after one jump
@@ -197,7 +197,6 @@ class CameraController {
         const z = this.target[2] + this.distance * Math.cos(radTheta) * Math.cos(radPhi);
 
         this.eye = vec3(x, y, z);
-        //console.log(this.eye[0], this.eye[1], this.eye[2]);
         return lookAt(this.eye, this.target, this.up);
     }
 }
