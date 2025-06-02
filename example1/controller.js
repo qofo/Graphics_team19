@@ -43,26 +43,22 @@ class PhysicsSystem {
     }
 
     computePosition(time, torsoX, torsoY) {
-        // const x = this.initialVelocity.x * time;
-        // const y = this.initialVelocity.y * time - 0.5 * this.gravity * time * time;
-        // return vec3(0, Math.max(0, y), x);
-
         const v = this.initialVelocity;
+        const v0 = Math.sqrt(v.x * v.x + v.y * v.y);
 
-        // 각도 → 라디안 변환
-        const radY = (torsoY % 360) * Math.PI / 180;
-        const radX = (torsoX % 360) * Math.PI / 180;
+        const radX = (-torsoX+60) * Math.PI / 180;
+        const radY = (torsoY) * Math.PI / 180;
 
-        // 수평면을 x축으로 pitch (상하 기울기)
-        const vy = v.x * Math.sin(radX) + v.y;  // pitch가 양수면 수직 속도가 더 커짐
-        const v_horizontal = v.x * Math.cos(radX);
+        const vy = v0 * Math.sin(radX);
+        const v_horizontal = v0 * Math.cos(radX);
 
         const x = v_horizontal * Math.cos(radY) * time;
         const z = v_horizontal * Math.sin(radY) * time;
         const y = vy * time - 0.5 * this.gravity * time * time;
 
-        return vec3(z, Math.max(0, y), x);
+        return vec3(z, y, x);
     }
+
     
     computeOrientation(time) {
         const vx = this.initialVelocity.x;
@@ -71,8 +67,14 @@ class PhysicsSystem {
         return this.radiansToDegrees(Math.atan2(vy, vx));
     }
     
-    getApexTime() {
-        return this.initialVelocity.y / this.gravity;
+    getApexTime(torsoX) {
+        const v = this.initialVelocity;
+        const v0 = Math.sqrt(v.x * v.x + v.y * v.y);
+
+        const radX = (-torsoX+60) * Math.PI / 180;
+
+        const vy = v0 * Math.sin(radX);
+        return Math.abs(vy / this.gravity);
     }
     
     radiansToDegrees(radians) {
@@ -96,19 +98,23 @@ class AnimationController {
         
         this.jumpTime += this.physicsSystem.timeStep;
         
-        const apexTime = this.physicsSystem.getApexTime();
+        const torsoX = this.jointController.getAngle('torsoX');
+        const torsoY = this.jointController.getAngle('torsoY');
+        const apexTime = this.physicsSystem.getApexTime(torsoX);
+
         this.jumpDirection = this.jumpTime < apexTime ? 1 : -1;
         
         this.jointController.updateJumpAngles(this.jumpDirection);
         
         // Check for landing
-        const torsoX = this.jointController.getAngle('torsoX');
-        const torsoY = this.jointController.getAngle('torsoY');
+
         const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
         
-        console.log(currentPos);
+        const time = Math.floor(this.jumpTime * 20);
+        if (Math.floor(time) % 25 === 0)
+            console.log("time:", time, "angle:", torsoX, "pos:", currentPos);
 
-        if (this.jumpTime > 2 * apexTime+1) {
+        if (this.jumpTime > 2 * apexTime) {
             this.jumpOrigin = add(this.jumpOrigin, currentPos);
             this.jumpTime = 0;
             this.isJumping = false; // Uncomment to stop after one jump
@@ -116,6 +122,8 @@ class AnimationController {
             this.jointController.angles = { ...CONFIG.initialJointAngles};
             this.jointController.angles.torsoX = torsoX;
             this.jointController.angles.torsoY = torsoY;
+
+            console.log(currentPos);
         }
     }
     
