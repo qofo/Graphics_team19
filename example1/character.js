@@ -73,6 +73,7 @@ class Character3D {
         let modelViewMatrix = mult(viewMatrix, translate(this.position[0], this.position[1], this.position[2]));
         modelViewMatrix = mult(modelViewMatrix, rotateY(this.jointController.getAngle('torsoY')));
         const torsoX = this.jointController.getAngle('torsoX') - this.orientation;
+        console.log("char: ", this.jointController.getAngle('torsoX'));
         modelViewMatrix = mult(modelViewMatrix, rotateX(torsoX));
 
         
@@ -197,6 +198,22 @@ class GroundManager {
             });
         }
     }
+
+    getGroundHeightAt(x, z) {
+    for (const ground of this.grounds) {
+        const halfWidth = 25.0 / 2;  // ground 크기 절반
+        const halfDepth = 25.0 / 2;
+        const groundX = ground.xOffset;
+        const groundZ = ground.zOffset + ground.zRandomOffset;
+
+        if (x >= groundX - halfWidth && x <= groundX + halfWidth &&
+            z >= groundZ - halfDepth && z <= groundZ + halfDepth) {
+            return 0.0;  // ground의 y위치 (-0.05지만 거의 0으로 볼 수 있음)
+        }
+    }
+    return null;  // ground 위가 아님
+}
+
 
     update(characterPositionZ) {
         const farthestGround = this.grounds[this.grounds.length - 1];

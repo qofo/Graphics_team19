@@ -93,6 +93,7 @@ class Character3DApp {
         const projectionMatrix = perspective(45, 
             this.renderer.canvas.width / this.renderer.canvas.height, 0.1, 500.0);
         this.renderer.setProjectionMatrix(projectionMatrix);
+        this.reset();
     }
     
     setupInput() {
@@ -152,6 +153,7 @@ class Character3DApp {
             }
         }
         this.jointController.angles.torsoX = Math.max(-30, Math.min(30, this.jointController.angles.torsoX));
+        console.log("app torsoX:", this.jointController.angles.torsoX);
         
         // 개구리 위치 갱신
         this.character.setPosition(this.animationController.getCurrentPosition());
@@ -160,9 +162,19 @@ class Character3DApp {
         // GroundManager 업데이트: 개구리의 z위치를 넘겨줌
         this.groundManager.update(this.character.position[2]);
 
-        // 낙사 처리
-        if (this.character.position[1] <= -0.1) {
-            //console.error("game over");
+        const charPos = this.character.position;
+        const groundHeight = this.groundManager.getGroundHeightAt(charPos[0], charPos[2]);
+
+        if (groundHeight !== null && charPos[1] <= groundHeight) {
+            // 착지
+            this.animationController.isJumping = false;
+            this.animationController.jumpTime = 0;
+            this.animationController.jumpOrigin = vec3(charPos[0], groundHeight, charPos[2]);
+            //this.jointController.angles = { ...CONFIG.initialJointAngles };
+        } else if (charPos[1] < -1.0) {
+            // 낙사
+            alert("Game Over: 캐릭터가 낙사했습니다.");
+            this.reset();
         }
     }
     

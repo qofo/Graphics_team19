@@ -111,20 +111,20 @@ class AnimationController {
         const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
         
         const time = Math.floor(this.jumpTime * 20);
-        if (Math.floor(time) % 25 === 0)
-            console.log("time:", time, "angle:", torsoX, "pos:", currentPos);
+        // if (Math.floor(time) % 25 === 0)
+        //     //console.log("time:", time, "angle:", torsoX, "pos:", currentPos);
 
-        if (this.jumpTime > 2 * apexTime) {
-            this.jumpOrigin = add(this.jumpOrigin, currentPos);
-            this.jumpTime = 0;
-            this.isJumping = false; // Uncomment to stop after one jump
+        // if (this.jumpTime > 2 * apexTime) {
+        //     this.jumpOrigin = add(this.jumpOrigin, currentPos);
+        //     this.jumpTime = 0;
+        //     this.isJumping = false; // Uncomment to stop after one jump
 
-            this.jointController.angles = { ...CONFIG.initialJointAngles};
-            this.jointController.angles.torsoX = torsoX;
-            this.jointController.angles.torsoY = torsoY;
+        //     this.jointController.angles = { ...CONFIG.initialJointAngles};
+        //     this.jointController.angles.torsoX = torsoX;
+        //     this.jointController.angles.torsoY = torsoY;
 
-            console.log(currentPos);
-        }
+        //     //console.log(currentPos);
+        // }
     }
     
     getCurrentPosition() {
