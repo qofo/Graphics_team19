@@ -147,7 +147,7 @@ class Ground {
         
         // Temporarily change material for ground
         this.setGroundMaterial();
-        this.renderer.drawBox(100.0, 0.1, 100.0, groundTransform);
+        this.renderer.drawBox(20.0, 0.1, 20.0, groundTransform);
         this.restoreCharacterMaterial();
         
         this.renderer.popMatrix();
@@ -178,5 +178,57 @@ class Ground {
             flatten(mult(vec4(...lighting.diffuse), vec4(...material.diffuse))));
         this.renderer.gl.uniform4fv(this.renderer.uniformLocations.specularProduct,
             flatten(mult(vec4(...lighting.specular), vec4(...material.specular))));
+    }
+}
+
+class GroundManager {
+    constructor(renderer) {
+        this.renderer = renderer;
+        this.grounds = [];
+        this.groundLength = 30;      // 여전히 z축 기준 buffer 간격은 유지
+        this.bufferCount = 5;
+
+        // 초기 ground 생성
+        for (let i = 0; i < this.bufferCount; i++) {
+            this.grounds.push({
+                zOffset: i * this.groundLength,
+                xOffset: (Math.random() - 0.5) * 30,   // ±10 범위 랜덤 x위치
+                zRandomOffset: (Math.random() - 0.5) * 30  // ±10 범위 랜덤 z위치
+            });
+        }
+    }
+
+    update(characterPositionZ) {
+        const farthestGround = this.grounds[this.grounds.length - 1];
+        if (characterPositionZ + (this.bufferCount - 1) * this.groundLength > farthestGround.zOffset) {
+            this.grounds.push({
+                zOffset: farthestGround.zOffset + this.groundLength,
+                xOffset: (Math.random() - 0.5) * 30,       // ±10
+                zRandomOffset: (Math.random() - 0.5) * 30  // ±10
+            });
+        }
+
+        const firstGround = this.grounds[0];
+        if (characterPositionZ - firstGround.zOffset > this.groundLength) {
+            this.grounds.shift();
+        }
+    }
+
+    render(viewMatrix) {
+        this.grounds.forEach(ground => {
+            const groundTransform = mult(viewMatrix, translate(
+                ground.xOffset,
+                -0.05,
+                ground.zOffset + ground.zRandomOffset
+            ));
+            this.renderer.pushMatrix(viewMatrix);
+
+            this.renderer.setGroundMaterial?.();
+            // 크기 축소: 50x0.1x50
+            this.renderer.drawBox(25.0, 0.1, 25.0, groundTransform);
+
+            this.renderer.restoreCharacterMaterial?.();
+            this.renderer.popMatrix();
+        });
     }
 }

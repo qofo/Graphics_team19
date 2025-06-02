@@ -59,7 +59,8 @@ class Character3DApp {
             
             // Create scene objects
             this.character = new Character3D(this.renderer, this.jointController);
-            this.ground = new Ground(this.renderer);
+            //this.ground = new Ground(this.renderer);
+            this.groundManager = new GroundManager(this.renderer);
             
             // Initialize WebGL
             this.initWebGL();
@@ -90,7 +91,7 @@ class Character3DApp {
         
         // Set projection matrix
         const projectionMatrix = perspective(45, 
-            this.renderer.canvas.width / this.renderer.canvas.height, 0.1, 100.0);
+            this.renderer.canvas.width / this.renderer.canvas.height, 0.1, 500.0);
         this.renderer.setProjectionMatrix(projectionMatrix);
     }
     
@@ -125,36 +126,44 @@ class Character3DApp {
         this.animationController.jumpOrigin = vec3(0, 0, 0);
         this.animationController.isJumping = false;
 
-        this.jointController.angles = {... CONFIG.initialJointAngles};
+        this.jointController.angles = { ...CONFIG.initialJointAngles };
+        this.character.position = vec3(0, 0, -50);
+
+        // GroundManager 초기화
+        this.groundManager = new GroundManager(this.renderer);
     }
     
     update() {
         this.animationController.update();
 
         const ROTATE_SPEED = 0.5;
-        if (this.inputManager.isKeyPressed('KeyW')) {
-            this.jointController.angles.torsoX -= ROTATE_SPEED;
-        }
-        if (this.inputManager.isKeyPressed('KeyS')) {
-            this.jointController.angles.torsoX += ROTATE_SPEED;
-        }
-        if (this.inputManager.isKeyPressed('KeyA')) {
-            this.jointController.angles.torsoY += ROTATE_SPEED;
-        }
-        if (this.inputManager.isKeyPressed('KeyD')) {
-            this.jointController.angles.torsoY -= ROTATE_SPEED;
+        if (!this.animationController.isJumping) {
+            if (this.inputManager.isKeyPressed('KeyW')) {
+                this.jointController.angles.torsoX -= ROTATE_SPEED;
+            }
+            if (this.inputManager.isKeyPressed('KeyS')) {
+                this.jointController.angles.torsoX += ROTATE_SPEED;
+            }
+            if (this.inputManager.isKeyPressed('KeyA')) {
+                this.jointController.angles.torsoY += ROTATE_SPEED;
+            }
+            if (this.inputManager.isKeyPressed('KeyD')) {
+                this.jointController.angles.torsoY -= ROTATE_SPEED;
+            }
         }
         this.jointController.angles.torsoX = Math.max(-30, Math.min(30, this.jointController.angles.torsoX));
         
-        if (this.character.position[1] <= -0.1) {
-            // 추락 판정
-            //this.gameOver();  // 게임 종료창 띄우기
-            this.reset();  // 다시 원래 위치로
-        }
-
-        // Update character position and orientation
+        // 개구리 위치 갱신
         this.character.setPosition(this.animationController.getCurrentPosition());
         this.character.setOrientation(this.animationController.getCurrentOrientation());
+
+        // GroundManager 업데이트: 개구리의 z위치를 넘겨줌
+        this.groundManager.update(this.character.position[2]);
+
+        // 낙사 처리
+        if (this.character.position[1] <= -0.1) {
+            //console.error("game over");
+        }
     }
     
     render() {
@@ -163,7 +172,8 @@ class Character3DApp {
         const viewMatrix = this.cameraController.getViewMatrix();
         
         // Render scene objects
-        this.ground.render(viewMatrix);
+        //this.ground.render(viewMatrix);
+        this.groundManager.render(viewMatrix);
         this.character.render(viewMatrix);
     }
     
