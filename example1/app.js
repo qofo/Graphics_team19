@@ -78,11 +78,21 @@ class Character3DApp {
         colorCube(1, 1, 1);
         this.renderer.pointsArray = pointsArray;
         this.renderer.normalsArray = normalsArray;
+        this.renderer.texCoordsArray = texCoordsArray;
         
         // Setup WebGL
         this.renderer.initShaders();
         this.renderer.setupBuffers();
         this.renderer.setupLighting();
+
+        // Texture Load
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.src = "groundTexture.jpg";
+        image.onload = () => {
+            this.renderer.initTexture(image);
+            this.renderer.setupTexture();
+        };
         
         // Configure WebGL state
         this.renderer.gl.enable(this.renderer.gl.DEPTH_TEST);
@@ -153,7 +163,7 @@ class Character3DApp {
             }
         }
         this.jointController.angles.torsoX = Math.max(-30, Math.min(30, this.jointController.angles.torsoX));
-        console.log("app torsoX:", this.jointController.angles.torsoX);
+        //console.log("app torsoX:", this.jointController.angles.torsoX);
         
         // 개구리 위치 갱신
         this.character.setPosition(this.animationController.getCurrentPosition());
@@ -171,9 +181,9 @@ class Character3DApp {
             this.animationController.jumpTime = 0;
             this.animationController.jumpOrigin = vec3(charPos[0], groundHeight, charPos[2]);
             //this.jointController.angles = { ...CONFIG.initialJointAngles };
-        } else if (charPos[1] < -1.0) {
+        } else if (charPos[1] < -10.0) {
             // 낙사
-            alert("Game Over: 캐릭터가 낙사했습니다.");
+            alert("Game Over");
             this.reset();
         }
     }
@@ -204,6 +214,7 @@ class Character3DApp {
 // Global variables for compatibility with modeling.js
 var pointsArray = [];
 var normalsArray = [];
+var texCoordsArray = [];
 
 // Initialize application when page loads
 window.onload = function() {

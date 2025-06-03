@@ -73,7 +73,7 @@ class Character3D {
         let modelViewMatrix = mult(viewMatrix, translate(this.position[0], this.position[1], this.position[2]));
         modelViewMatrix = mult(modelViewMatrix, rotateY(this.jointController.getAngle('torsoY')));
         const torsoX = this.jointController.getAngle('torsoX') - this.orientation;
-        console.log("char: ", this.jointController.getAngle('torsoX'));
+        //console.log("char: ", this.jointController.getAngle('torsoX'));
         modelViewMatrix = mult(modelViewMatrix, rotateX(torsoX));
 
         
