@@ -46,6 +46,7 @@ class WebGLRenderer {
         this.program = null;
         this.matrixStack = [];
         this.numVertices = 36;
+        this.frogTexture = null;
         
         // Matrix uniform locations
         this.uniformLocations = {};
@@ -129,29 +130,63 @@ class WebGLRenderer {
         this.gl.uniform1f(this.uniformLocations.shininess, material.shininess);
     }
 
-    initTexture(image) {
+    setFrogMaterial() {
+        const { ambient, diffuse, specular, shininess } = CONFIG.material;
+        this.gl.uniform4fv(this.uniformLocations.ambientProduct, ambient);
+        this.gl.uniform4fv(this.uniformLocations.diffuseProduct, diffuse);
+        this.gl.uniform4fv(this.uniformLocations.specularProduct, specular);
+        this.gl.uniform1f(this.uniformLocations.shininess, shininess);
+    }
+
+    setGroundMaterial() {
+        const { ambient, diffuse, specular, shininess } = CONFIG.groundMaterial;
+        this.gl.uniform4fv(this.uniformLocations.ambientProduct, ambient);
+        this.gl.uniform4fv(this.uniformLocations.diffuseProduct, diffuse);
+        this.gl.uniform4fv(this.uniformLocations.specularProduct, specular);
+        this.gl.uniform1f(this.uniformLocations.shininess, shininess);
+    }
+
+
+    initFrogTexture(image) {
         const texture = this.gl.createTexture();
         this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA,
-            this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
+                        this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
 
-        // 파워오브투 규격 아닐 경우
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
 
-        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-        this.texture = texture;
+        this.frogTexture = texture;
     }
 
-    setupTexture() {
+    initGroundTexture(image) {
+        const texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA,
+                            this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+
+        this.groundTexture = texture;
+    }
+
+    setupGroundTexture() {
         this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.groundTexture);
 
         const textureLoc = this.gl.getUniformLocation(this.program, "texture");
-        this.gl.uniform1i(textureLoc, 0); // TEXTURE0 사용
+        this.gl.uniform1i(textureLoc, 0);
     }
 
+    setupFrogTexture() {
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.frogTexture);
+
+        const textureLoc = this.gl.getUniformLocation(this.program, "texture");
+        this.gl.uniform1i(textureLoc, 0);
+    }
     
     setProjectionMatrix(matrix) {
         this.gl.uniformMatrix4fv(this.uniformLocations.projectionMatrix, false, flatten(matrix));

@@ -27,6 +27,12 @@ const CONFIG = {
         specular: [0.2, 0.4, 0.2, 1.0],
         shininess: 30.0
     },
+    groundMaterial: {
+        ambient: [0.4, 0.25, 0.1, 1.0], // 🟤 연한 갈색 ambient
+        diffuse: [0.5, 0.3, 0.15, 1.0], // 🟤 연한 갈색 diffuse
+        specular: [0.1, 0.1, 0.1, 1.0], // 🟤 살짝 어두운 specular
+        shininess: 10.0
+    },
     camera: {
         eye: [-80.0, 15.0, 35.0],
         at: [10.0, 0.0, 0.0],
@@ -90,8 +96,13 @@ class Character3DApp {
         image.crossOrigin = "anonymous";
         image.src = "groundTexture.jpg";
         image.onload = () => {
-            this.renderer.initTexture(image);
-            this.renderer.setupTexture();
+            this.renderer.initGroundTexture(image);
+        };
+
+        const frogImage = new Image();
+        frogImage.src = "frogTexture.jpg";
+        frogImage.onload = () => {
+            this.renderer.initFrogTexture(frogImage);
         };
         
         // Configure WebGL state

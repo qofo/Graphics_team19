@@ -63,10 +63,7 @@ void main() {
 
     vec4 texColor = texture2D(texture, fTexCoord);
 
-    //gl_FragColor = texColor * (ambient + diffuse + specular);
-vec4 lighting = vec4(1.0); // 전체적으로 흰색
-
-gl_FragColor = texColor * lighting;
+    gl_FragColor = texColor * (ambient + diffuse + specular);
     gl_FragColor.a = 1.0;
 }
 </script>
