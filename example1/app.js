@@ -120,18 +120,6 @@ class Character3DApp {
     setupInput() {
         this.inputManager.on('keydown', (keyCode) => {
             switch(keyCode) {
-                case 'ArrowLeft':
-                    this.cameraController.moveLeft();
-                    break;
-                case 'ArrowRight':
-                    this.cameraController.moveRight();
-                    break;
-                case 'ArrowUp':
-                    this.cameraController.moveUp();
-                    break;
-                case 'ArrowDown':
-                    this.cameraController.moveDown();
-                    break;
                 case 'Space':
                 case ' ':
                     this.animationController.triggerJump();
