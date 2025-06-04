@@ -47,11 +47,22 @@ class Character3D {
         this.renderer.drawBox(width, footHeight, width, limbTransform);
 
         if (toeCfg.length > 0) {
-            const offsets = [-width / 2 + toeCfg.width / 2, 0, width / 2 - toeCfg.width / 2];
+            const offsets = [
+                -width / 2 + toeCfg.width / 2,
+                0,
+                width / 2 - toeCfg.width / 2
+            ];
             offsets.forEach(x => {
-                const toeTransform = mult(limbTransform,
-                    translate(x, 0, width / 2 + toeCfg.length / 2));
-                this.renderer.drawBox(toeCfg.width, toeCfg.height, toeCfg.length, toeTransform);
+                const toeTransform = mult(
+                    limbTransform,
+                    translate(x, -footHeight / 2, -width / 2 - toeCfg.length / 2)
+                );
+                this.renderer.drawBox(
+                    toeCfg.width,
+                    toeCfg.height,
+                    toeCfg.length,
+                    toeTransform
+                );
             });
         }
         
