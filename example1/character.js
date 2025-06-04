@@ -28,8 +28,7 @@ class Character3D {
     drawLimb(transform, upperAngle, lowerAngle, footAngle, upperLen, lowerLen) {
         const { width } = CONFIG.bodyParts.leg;
         const { height: footHeight } = CONFIG.bodyParts.foot;
-        const toeCfg = CONFIG.bodyParts.toe || { width: 0, height: 0, length: 0 };
-        
+
         // Upper limb
         let limbTransform = mult(transform, rotateX(upperAngle));
         this.renderer.pushMatrix(limbTransform);
@@ -45,26 +44,6 @@ class Character3D {
         limbTransform = mult(limbTransform, translate(0, lowerLen, 0));
         limbTransform = mult(limbTransform, rotateX(footAngle));
         this.renderer.drawBox(width, footHeight, width, limbTransform);
-
-        if (toeCfg.length > 0) {
-            const offsets = [
-                -width / 2 + toeCfg.width / 2,
-                0,
-                width / 2 - toeCfg.width / 2
-            ];
-            offsets.forEach(x => {
-                const toeTransform = mult(
-                    limbTransform,
-                    translate(x, -footHeight / 2, -width / 2 - toeCfg.length / 2)
-                );
-                this.renderer.drawBox(
-                    toeCfg.width,
-                    toeCfg.height,
-                    toeCfg.length,
-                    toeTransform
-                );
-            });
-        }
         
         // Restore matrices
         this.renderer.popMatrix();
