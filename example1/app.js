@@ -8,7 +8,8 @@ const CONFIG = {
         leg: { upperHeight: 3.5, lowerHeight: 3.0, width: 0.6 },
         arm: { upperHeight: 2.0, lowerHeight: 1.5, width: 0.6 },
         foot: { height: 3.0 },
-        eye: { radius: 0.3 }
+        eye: { radius: 0.3 },
+        toe: { width: 0.2, height: 0.2, length: 0.7 }
     },
     physics: {
         gravity: 0.5,
