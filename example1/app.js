@@ -16,7 +16,7 @@ const CONFIG = {
         timeStep: 0.05
     },
     lighting: {
-        position: [1.0, 1.0, 1.0, 0.0],
+        position: [1.0, 1.0, 1.0, 1.0],
         ambient: [0.2, 0.2, 0.2, 1.0],
         diffuse: [1.0, 1.0, 0.8, 1.0],
         specular: [1.0, 1.0, 1.0, 1.0]
@@ -62,6 +62,10 @@ class Character3DApp {
             this.cameraController.bindToCanvas(this.renderer.canvas, () => this.character.position);
 
             this.inputManager = new InputManager();
+
+            this.lightOffsets = { x: 0, y: 5, z: 0 };
+            this.totalDistance = 0;
+            this.lastZ = 0;
             
             // Create scene objects
             this.character = new Character3D(this.renderer, this.jointController);
@@ -71,6 +75,7 @@ class Character3DApp {
             // Initialize WebGL
             this.initWebGL();
             this.setupInput();
+            this.setupUI();
             this.start();
             
         } catch (error) {
@@ -130,6 +135,20 @@ class Character3DApp {
             }
         });
     }
+
+    setupUI() {
+        const bind = (id, axis) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => {
+                    this.lightOffsets[axis] = parseFloat(el.value);
+                });
+            }
+        };
+        bind('light-x', 'x');
+        bind('light-y', 'y');
+        bind('light-z', 'z');
+    }
     
     reset() {
         this.animationController.jumpTime = 0;
@@ -138,6 +157,11 @@ class Character3DApp {
 
         this.jointController.angles = { ...CONFIG.initialJointAngles };
         this.character.position = vec3(0, 0, -50);
+
+        this.totalDistance = 0;
+        this.lastZ = this.character.position[2];
+        const distElem = document.getElementById('distance');
+        if (distElem) distElem.textContent = this.totalDistance.toFixed(2);
 
         // GroundManager 초기화
         this.groundManager = new GroundManager(this.renderer);
@@ -168,10 +192,23 @@ class Character3DApp {
         this.character.setPosition(this.animationController.getCurrentPosition());
         this.character.setOrientation(this.animationController.getCurrentOrientation());
 
+        const charPos = this.character.position;
+        this.totalDistance += charPos[2] - this.lastZ;
+        this.lastZ = charPos[2];
+        const distElem = document.getElementById('distance');
+        if (distElem) distElem.textContent = this.totalDistance.toFixed(2);
+
+        const lightPos = vec4(
+            charPos[0] + this.lightOffsets.x,
+            charPos[1] + this.lightOffsets.y,
+            charPos[2] + this.lightOffsets.z,
+            1.0
+        );
+        this.renderer.updateLightPosition(lightPos);
+
         // GroundManager 업데이트: 개구리의 z위치를 넘겨줌
         this.groundManager.update(this.character.position[2]);
 
-        const charPos = this.character.position;
         const groundHeight = this.groundManager.getGroundHeightAt(charPos[0], charPos[2]);
 
         if (groundHeight !== null && charPos[1] <= groundHeight) {
