@@ -213,9 +213,11 @@ class Character3DApp {
 
         if (groundHeight !== null && charPos[1] <= groundHeight) {
             // 착지 - use landing state
-            this.animationController.startLanding([
-                charPos[0], groundHeight, charPos[2]
-            ]);
+            if (this.animationController.isJumping && !this.animationController.isLanding) {
+                this.animationController.startLanding([
+                    charPos[0], groundHeight, charPos[2]
+                ]);
+            }
         } else if (charPos[1] < -10.0) {
             // 낙사
             alert("Game Over");
