@@ -89,7 +89,7 @@ class AnimationController {
         this.physicsSystem = physicsSystem;
         this.isJumping = false;
         this.jumpTime = 0;
-        this.jumpOrigin = vec3(0, 0, 0);
+        this.jumpOrigin = vec3(0, FOOT_OFFSET, -50);
         this.jumpDirection = 1;
 
         // Landing state variables

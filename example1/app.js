@@ -49,6 +49,9 @@ const CONFIG = {
     }
 };
 
+// Offset from torso base to ground so that feet rest on the floor
+const FOOT_OFFSET = 2.5;
+
 // Main Application class
 class Character3DApp {
     constructor(canvasId) {
@@ -152,11 +155,11 @@ class Character3DApp {
     
     reset() {
         this.animationController.jumpTime = 0;
-        this.animationController.jumpOrigin = vec3(0, 0, 0);
+        this.animationController.jumpOrigin = vec3(0, FOOT_OFFSET, -50);
         this.animationController.isJumping = false;
 
         this.jointController.angles = { ...CONFIG.initialJointAngles };
-        this.character.position = vec3(0, 0, -50);
+        this.character.position = vec3(0, FOOT_OFFSET, -50);
 
         this.totalDistance = 0;
         this.lastZ = this.character.position[2];
@@ -211,14 +214,14 @@ class Character3DApp {
 
         const groundHeight = this.groundManager.getGroundHeightAt(charPos[0], charPos[2]);
 
-        if (groundHeight !== null && charPos[1] <= groundHeight) {
+        if (groundHeight !== null && charPos[1] - FOOT_OFFSET <= groundHeight) {
             // 착지 - use landing state
             if (this.animationController.isJumping && !this.animationController.isLanding) {
                 this.animationController.startLanding([
-                    charPos[0], groundHeight, charPos[2]
+                    charPos[0], groundHeight + FOOT_OFFSET, charPos[2]
                 ]);
             }
-        } else if (charPos[1] < -10.0) {
+        } else if (charPos[1] - FOOT_OFFSET < -10.0) {
             // 낙사
             alert("Game Over");
             this.reset();
