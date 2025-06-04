@@ -14,9 +14,11 @@ attribute vec2 vTexCoord;
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 normalMatrix;
+uniform mat4 shadowMatrix;
 
 varying vec3 fNormal;
 varying vec3 fPosition;
+varying vec4 vShadowCoord;
 
 varying vec2 fTexCoord;
 
@@ -25,6 +27,7 @@ void main() {
     fPosition = pos.xyz;
     fNormal = normalize((normalMatrix * vec4(vNormal, 0.0)).xyz);
     fTexCoord = vTexCoord;
+    vShadowCoord = shadowMatrix * vPosition;
 
     gl_Position = projectionMatrix * pos;
 }
@@ -39,8 +42,10 @@ varying vec3 fNormal;
 varying vec3 fPosition;
 
 varying vec2 fTexCoord;
+varying vec4 vShadowCoord;
 
 uniform sampler2D texture;
+uniform sampler2D shadowMap;
 
 
 
@@ -72,11 +77,12 @@ void main() {
 
 
     vec4 texColor = texture2D(texture, fTexCoord);
+    vec3 projCoords = vShadowCoord.xyz / vShadowCoord.w;
+    float closest = texture2D(shadowMap, projCoords.xy).r;
+    float current = projCoords.z;
+    float shadow = current - 0.005 > closest ? 0.5 : 1.0;
 
-    gl_FragColor = texColor * (ambient + diffuse + specular);
-
-    //gl_FragColor = ambient + diffuse + specular;
-
+    gl_FragColor = texColor * (ambient + diffuse + specular) * shadow;
     gl_FragColor.a = 1.0;
 }
 </script>
