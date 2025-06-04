@@ -95,6 +95,7 @@ class Character3DApp {
         this.renderer.initShaders();
         this.renderer.setupBuffers();
         this.renderer.setupLighting();
+        this.renderer.initShadowMap();
 
         // Texture Load
         const image = new Image();
@@ -116,9 +117,9 @@ class Character3DApp {
         this.renderer.gl.viewport(0, 0, this.renderer.canvas.width, this.renderer.canvas.height);
         
         // Set projection matrix
-        const projectionMatrix = perspective(45, 
+        this.cameraProjection = perspective(45,
             this.renderer.canvas.width / this.renderer.canvas.height, 0.1, 500.0);
-        this.renderer.setProjectionMatrix(projectionMatrix);
+        this.renderer.setProjectionMatrix(this.cameraProjection);
         this.reset();
     }
     
@@ -226,12 +227,23 @@ class Character3DApp {
     }
     
     render() {
+        // first pass: render to shadow map
+        const lightView = this.renderer.lightViewMatrix;
+        const lightProj = this.renderer.lightProjectionMatrix;
+        this.renderer.bindShadowFramebuffer();
         this.renderer.clear();
-        
+        this.renderer.setViewMatrix(lightView);
+        this.renderer.setProjectionMatrix(lightProj);
+        this.groundManager.render(lightView);
+        this.character.render(lightView);
+        this.renderer.unbindShadowFramebuffer();
+
+        // second pass: render from camera
         const viewMatrix = this.cameraController.getViewMatrix();
-        
-        // Render scene objects
-        //this.ground.render(viewMatrix);
+        this.renderer.setProjectionMatrix(this.cameraProjection);
+        this.renderer.setViewMatrix(viewMatrix);
+        this.renderer.clear();
+        this.renderer.setupShadowMap();
         this.groundManager.render(viewMatrix);
         this.character.render(viewMatrix);
     }

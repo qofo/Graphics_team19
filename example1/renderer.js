@@ -54,6 +54,19 @@ class WebGLRenderer {
         // Geometry data
         this.pointsArray = [];
         this.normalsArray = [];
+
+        this.currentViewMatrix = mat4();
+        this.lightViewMatrix = mat4();
+        this.lightProjectionMatrix = mat4();
+        this.biasMatrix = mat4(
+            vec4(0.5, 0.0, 0.0, 0.0),
+            vec4(0.0, 0.5, 0.0, 0.0),
+            vec4(0.0, 0.0, 0.5, 0.0),
+            vec4(0.5, 0.5, 0.5, 1.0)
+        );
+        this.shadowMapSize = 1024;
+        this.shadowFramebuffer = null;
+        this.shadowDepthTexture = null;
     }
     
     initWebGL() {
@@ -80,7 +93,9 @@ class WebGLRenderer {
             diffuseProduct: this.gl.getUniformLocation(this.program, "diffuseProduct"),
             specularProduct: this.gl.getUniformLocation(this.program, "specularProduct"),
             lightPosition: this.gl.getUniformLocation(this.program, "lightPosition"),
-            shininess: this.gl.getUniformLocation(this.program, "shininess")
+            shininess: this.gl.getUniformLocation(this.program, "shininess"),
+            shadowMatrix: this.gl.getUniformLocation(this.program, "shadowMatrix"),
+            shadowMap: this.gl.getUniformLocation(this.program, "shadowMap")
         };
     }
     
@@ -125,8 +140,10 @@ class WebGLRenderer {
             flatten(mult(vec4(...lighting.diffuse), vec4(...material.diffuse))));
         this.gl.uniform4fv(this.uniformLocations.specularProduct, 
             flatten(mult(vec4(...lighting.specular), vec4(...material.specular))));
-        this.gl.uniform4fv(this.uniformLocations.lightPosition, 
+        this.gl.uniform4fv(this.uniformLocations.lightPosition,
             flatten(vec4(...lighting.position)));
+        this.lightViewMatrix = lookAt(vec3(...lighting.position.slice(0,3)), vec3(0,0,0), vec3(0,1,0));
+        this.lightProjectionMatrix = perspective(45, 1, 0.1, 200.0);
         this.gl.uniform1f(this.uniformLocations.shininess, material.shininess);
     }
 
@@ -172,12 +189,45 @@ class WebGLRenderer {
         this.groundTexture = texture;
     }
 
+    initShadowMap() {
+        const gl = this.gl;
+        this.shadowFramebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.shadowFramebuffer);
+
+        const colorTex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, colorTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.shadowMapSize, this.shadowMapSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTex, 0);
+
+        this.shadowDepthTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.shadowDepthTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT16, this.shadowMapSize, this.shadowMapSize, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.shadowDepthTexture, 0);
+
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
     setupGroundTexture() {
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.groundTexture);
 
         const textureLoc = this.gl.getUniformLocation(this.program, "texture");
         this.gl.uniform1i(textureLoc, 0);
+    }
+
+    setupShadowMap() {
+        this.gl.activeTexture(this.gl.TEXTURE1);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.shadowDepthTexture);
+        this.gl.uniform1i(this.uniformLocations.shadowMap, 1);
     }
 
     setupFrogTexture() {
@@ -187,9 +237,31 @@ class WebGLRenderer {
         const textureLoc = this.gl.getUniformLocation(this.program, "texture");
         this.gl.uniform1i(textureLoc, 0);
     }
+
+    bindShadowFramebuffer() {
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.shadowFramebuffer);
+        this.gl.viewport(0, 0, this.shadowMapSize, this.shadowMapSize);
+    }
+
+    unbindShadowFramebuffer() {
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    }
     
     setProjectionMatrix(matrix) {
         this.gl.uniformMatrix4fv(this.uniformLocations.projectionMatrix, false, flatten(matrix));
+    }
+
+    setViewMatrix(matrix) {
+        this.currentViewMatrix = mat4(matrix);
+    }
+
+    setLightViewMatrix(matrix) {
+        this.lightViewMatrix = mat4(matrix);
+    }
+
+    setLightProjectionMatrix(matrix) {
+        this.lightProjectionMatrix = mat4(matrix);
     }
     
     setModelViewMatrix(matrix) {
@@ -202,8 +274,15 @@ class WebGLRenderer {
     drawBox(width, height, depth, transform) {
         const instanceMatrix = mult(transform, translate(0.0, 0.5 * height, 0.0));
         const scaledMatrix = mult(instanceMatrix, scale4(width, height, depth));
-        
+
         this.setModelViewMatrix(scaledMatrix);
+
+        const invView = inverse4(this.currentViewMatrix);
+        const worldMatrix = mult(invView, scaledMatrix);
+        const shadow = mult(this.biasMatrix,
+            mult(this.lightProjectionMatrix, mult(this.lightViewMatrix, worldMatrix)));
+        this.gl.uniformMatrix4fv(this.uniformLocations.shadowMatrix, false, flatten(shadow));
+
         this.gl.drawArrays(this.gl.TRIANGLES, 0, this.numVertices);
     }
     
@@ -217,6 +296,7 @@ class WebGLRenderer {
 
     updateLightPosition(position) {
         this.gl.uniform4fv(this.uniformLocations.lightPosition, flatten(position));
+        this.lightViewMatrix = lookAt(vec3(position[0], position[1], position[2]), vec3(0,0,0), vec3(0,1,0));
     }
 
     clear() {
