@@ -73,10 +73,10 @@ class Character3D {
         let modelViewMatrix = mult(viewMatrix, translate(this.position[0], this.position[1], this.position[2]));
         modelViewMatrix = mult(modelViewMatrix, rotateY(this.jointController.getAngle('torsoY')));
         const torsoX = this.jointController.getAngle('torsoX') - this.orientation;
-        console.log("char: ", this.jointController.getAngle('torsoX'));
         modelViewMatrix = mult(modelViewMatrix, rotateX(torsoX));
 
-        
+        this.renderer.setupFrogTexture();
+        this.renderer.setFrogMaterial();
         this.renderer.pushMatrix(modelViewMatrix);
         
         // Draw torso
@@ -148,6 +148,7 @@ class Ground {
         
         // Temporarily change material for ground
         this.setGroundMaterial();
+        this.renderer.setGroundTexture();
         this.renderer.drawBox(20.0, 0.1, 20.0, groundTransform);
         this.restoreCharacterMaterial();
         
@@ -239,7 +240,8 @@ class GroundManager {
                 ground.zOffset + ground.zRandomOffset
             ));
             this.renderer.pushMatrix(viewMatrix);
-
+            this.renderer.setupGroundTexture();
+            this.renderer.setGroundMaterial();
             this.renderer.setGroundMaterial?.();
             // 크기 축소: 50x0.1x50
             this.renderer.drawBox(25.0, 0.1, 25.0, groundTransform);

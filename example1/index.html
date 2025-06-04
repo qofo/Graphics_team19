@@ -8,6 +8,9 @@
 attribute vec4 vPosition;
 attribute vec3 vNormal;
 
+attribute vec2 vTexCoord;
+
+
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 normalMatrix;
@@ -15,10 +18,14 @@ uniform mat4 normalMatrix;
 varying vec3 fNormal;
 varying vec3 fPosition;
 
+varying vec2 fTexCoord;
+
 void main() {
     vec4 pos = modelViewMatrix * vPosition;
     fPosition = pos.xyz;
     fNormal = normalize((normalMatrix * vec4(vNormal, 0.0)).xyz);
+    fTexCoord = vTexCoord;
+
     gl_Position = projectionMatrix * pos;
 }
 
@@ -31,11 +38,19 @@ precision mediump float;
 varying vec3 fNormal;
 varying vec3 fPosition;
 
+varying vec2 fTexCoord;
+
+uniform sampler2D texture;
+
+
+
 uniform vec4 ambientProduct;
 uniform vec4 diffuseProduct;
 uniform vec4 specularProduct;
 uniform vec4 lightPosition;
 uniform float shininess;
+
+uniform sampler2D textureSam;
 
 void main() {
     vec3 N = normalize(fNormal);
@@ -55,7 +70,13 @@ void main() {
     vec4 diffuse = Kd * diffuseProduct;
     vec4 specular = (dot(N, L) < 0.0) ? vec4(0.0) : Ks * specularProduct;
 
+
+    vec4 texColor = texture2D(texture, fTexCoord);
+
+    gl_FragColor = texColor * (ambient + diffuse + specular);
+
     gl_FragColor = ambient + diffuse + specular;
+
     gl_FragColor.a = 1.0;
 }
 </script>
@@ -73,6 +94,7 @@ void main() {
 <canvas id="gl-canvas" width="1024" height="1024">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
+
 <div id="ui">
   <div id="distance">0</div>
   <label>Light X
@@ -85,5 +107,6 @@ Oops ... your browser doesn't support the HTML5 canvas element
     <input id="light-z" type="range" min="-10" max="10" step="0.1" value="0">
   </label>
 </div>
+
 </body>
 </html>

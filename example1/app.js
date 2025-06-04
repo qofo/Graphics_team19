@@ -27,6 +27,12 @@ const CONFIG = {
         specular: [0.2, 0.4, 0.2, 1.0],
         shininess: 30.0
     },
+    groundMaterial: {
+        ambient: [0.4, 0.25, 0.1, 1.0], // 🟤 연한 갈색 ambient
+        diffuse: [0.5, 0.3, 0.15, 1.0], // 🟤 연한 갈색 diffuse
+        specular: [0.1, 0.1, 0.1, 1.0], // 🟤 살짝 어두운 specular
+        shininess: 10.0
+    },
     camera: {
         eye: [-80.0, 15.0, 35.0],
         at: [10.0, 0.0, 0.0],
@@ -83,11 +89,26 @@ class Character3DApp {
         colorCube(1, 1, 1);
         this.renderer.pointsArray = pointsArray;
         this.renderer.normalsArray = normalsArray;
+        this.renderer.texCoordsArray = texCoordsArray;
         
         // Setup WebGL
         this.renderer.initShaders();
         this.renderer.setupBuffers();
         this.renderer.setupLighting();
+
+        // Texture Load
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.src = "groundTexture.jpg";
+        image.onload = () => {
+            this.renderer.initGroundTexture(image);
+        };
+
+        const frogImage = new Image();
+        frogImage.src = "frogTexture.jpg";
+        frogImage.onload = () => {
+            this.renderer.initFrogTexture(frogImage);
+        };
         
         // Configure WebGL state
         this.renderer.gl.enable(this.renderer.gl.DEPTH_TEST);
@@ -104,18 +125,6 @@ class Character3DApp {
     setupInput() {
         this.inputManager.on('keydown', (keyCode) => {
             switch(keyCode) {
-                case 'ArrowLeft':
-                    this.cameraController.moveLeft();
-                    break;
-                case 'ArrowRight':
-                    this.cameraController.moveRight();
-                    break;
-                case 'ArrowUp':
-                    this.cameraController.moveUp();
-                    break;
-                case 'ArrowDown':
-                    this.cameraController.moveDown();
-                    break;
                 case 'Space':
                 case ' ':
                     this.animationController.triggerJump();
@@ -177,7 +186,7 @@ class Character3DApp {
             }
         }
         this.jointController.angles.torsoX = Math.max(-30, Math.min(30, this.jointController.angles.torsoX));
-        console.log("app torsoX:", this.jointController.angles.torsoX);
+        //console.log("app torsoX:", this.jointController.angles.torsoX);
         
         // 개구리 위치 갱신
         this.character.setPosition(this.animationController.getCurrentPosition());
@@ -208,9 +217,9 @@ class Character3DApp {
             this.animationController.jumpTime = 0;
             this.animationController.jumpOrigin = vec3(charPos[0], groundHeight, charPos[2]);
             //this.jointController.angles = { ...CONFIG.initialJointAngles };
-        } else if (charPos[1] < -1.0) {
+        } else if (charPos[1] < -10.0) {
             // 낙사
-            alert("Game Over: 캐릭터가 낙사했습니다.");
+            alert("Game Over");
             this.reset();
         }
     }
@@ -241,6 +250,7 @@ class Character3DApp {
 // Global variables for compatibility with modeling.js
 var pointsArray = [];
 var normalsArray = [];
+var texCoordsArray = [];
 
 // Initialize application when page loads
 window.onload = function() {
