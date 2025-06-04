@@ -91,9 +91,34 @@ class AnimationController {
         this.jumpTime = 0;
         this.jumpOrigin = vec3(0, 0, 0);
         this.jumpDirection = 1;
+        this.isLanding = false;
+        this.landingTime = 0;
+        this.landingDuration = 0.2;
+        this.landingStartAngles = null;
     }
-    
+
     update() {
+        if (this.isLanding) {
+            this.landingTime += this.physicsSystem.timeStep;
+            const t = Math.min(1, this.landingTime / this.landingDuration);
+            const target = CONFIG.initialJointAngles;
+
+            for (const joint in target) {
+                const start = this.landingStartAngles[joint];
+                this.jointController.angles[joint] =
+                    start + (target[joint] - start) * t;
+            }
+
+            if (t >= 1) {
+                this.isLanding = false;
+                this.landingTime = 0;
+                this.landingStartAngles = null;
+                this.jointController.angles = { ...CONFIG.initialJointAngles };
+                this.jumpTime = 0;
+            }
+            return;
+        }
+
         if (!this.isJumping) return;
         
         this.jumpTime += this.physicsSystem.timeStep;
@@ -143,6 +168,15 @@ class AnimationController {
             this.isJumping = true;
             this.jumpTime = 0;
         }
+    }
+
+    startLanding(position) {
+        this.isJumping = false;
+        this.isLanding = true;
+        this.landingTime = 0;
+        this.landingStartAngles = { ...this.jointController.angles };
+        this.jumpOrigin = vec3(...position);
+        this.jumpTime = 0;
     }
 }
 
