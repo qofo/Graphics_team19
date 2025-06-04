@@ -91,58 +91,82 @@ class AnimationController {
         this.jumpTime = 0;
         this.jumpOrigin = vec3(0, 0, 0);
         this.jumpDirection = 1;
+
+        // Landing state variables
+        this.isLanding = false;
+        this.landingTime = 0;
+        this.landingDuration = 0.3;
+        this.landingStartAngles = { ...CONFIG.initialJointAngles };
     }
     
     update() {
-        if (!this.isJumping) return;
-        
-        this.jumpTime += this.physicsSystem.timeStep;
-        
-        const torsoX = this.jointController.getAngle('torsoX');
-        const torsoY = this.jointController.getAngle('torsoY');
-        const apexTime = this.physicsSystem.getApexTime(torsoX);
+        if (this.isJumping) {
+            this.jumpTime += this.physicsSystem.timeStep;
 
-        this.jumpDirection = this.jumpTime < apexTime ? 1 : -1;
-        
-        this.jointController.updateJumpAngles(this.jumpDirection);
-        
-        // Check for landing
+            const torsoX = this.jointController.getAngle('torsoX');
+            const torsoY = this.jointController.getAngle('torsoY');
+            const apexTime = this.physicsSystem.getApexTime(torsoX);
 
-        const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
-        
-        const time = Math.floor(this.jumpTime * 20);
-        // if (Math.floor(time) % 25 === 0)
-        //     //console.log("time:", time, "angle:", torsoX, "pos:", currentPos);
+            this.jumpDirection = this.jumpTime < apexTime ? 1 : -1;
 
-        // if (this.jumpTime > 2 * apexTime) {
-        //     this.jumpOrigin = add(this.jumpOrigin, currentPos);
-        //     this.jumpTime = 0;
-        //     this.isJumping = false; // Uncomment to stop after one jump
+            this.jointController.updateJumpAngles(this.jumpDirection);
 
-        //     this.jointController.angles = { ...CONFIG.initialJointAngles};
-        //     this.jointController.angles.torsoX = torsoX;
-        //     this.jointController.angles.torsoY = torsoY;
+            // landing detection handled in app.js
 
-        //     //console.log(currentPos);
-        // }
+            const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
+
+            const time = Math.floor(this.jumpTime * 20);
+            // console logging removed
+        } else if (this.isLanding) {
+            this.landingTime += this.physicsSystem.timeStep;
+            const t = Math.min(1, this.landingTime / this.landingDuration);
+
+            for (const joint in CONFIG.initialJointAngles) {
+                const start = this.landingStartAngles[joint];
+                const end = CONFIG.initialJointAngles[joint];
+                this.jointController.angles[joint] = start + (end - start) * t;
+            }
+
+            if (t >= 1) {
+                this.isLanding = false;
+                this.jointController.angles = { ...CONFIG.initialJointAngles };
+            }
+        } else {
+            return;
+        }
     }
     
     getCurrentPosition() {
+        if (this.isLanding || !this.isJumping) {
+            return this.jumpOrigin;
+        }
+
         const torsoX = this.jointController.getAngle('torsoX');
         const torsoY = this.jointController.getAngle('torsoY');
         const offset = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
         return add(this.jumpOrigin, offset);
     }
-    
+
     getCurrentOrientation() {
-        return this.physicsSystem.computeOrientation(this.jumpTime);
+        if (this.isJumping) {
+            return this.physicsSystem.computeOrientation(this.jumpTime);
+        }
+        return 0;
     }
     
     triggerJump() {
-        if (!this.isJumping) {
+        if (!this.isJumping && !this.isLanding) {
             this.isJumping = true;
             this.jumpTime = 0;
         }
+    }
+
+    startLanding(position) {
+        this.isJumping = false;
+        this.isLanding = true;
+        this.landingTime = 0;
+        this.jumpOrigin = vec3(...position);
+        this.landingStartAngles = { ...this.jointController.angles };
     }
 }
 
