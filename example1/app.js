@@ -16,7 +16,7 @@ const CONFIG = {
         timeStep: 0.05
     },
     lighting: {
-        position: [1.0, 1.0, 1.0, 1.0],
+        position: [0.0, 5.0, 0.0, 1.0],
         ambient: [0.2, 0.2, 0.2, 1.0],
         diffuse: [1.0, 1.0, 0.8, 1.0],
         specular: [1.0, 1.0, 1.0, 1.0]
@@ -63,7 +63,8 @@ class Character3DApp {
 
             this.inputManager = new InputManager();
 
-            this.lightOffsets = { x: 0, y: 5, z: 0 };
+            this.lightSpherical = { radius: 5, theta: 0, phi: 0 };
+            this.currentLightPos = vec4(0, 5, 0, 1.0);
             this.totalDistance = 0;
             this.lastZ = 0;
             
@@ -137,17 +138,19 @@ class Character3DApp {
     }
 
     setupUI() {
-        const bind = (id, axis) => {
+        const bind = (id, key) => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('input', () => {
-                    this.lightOffsets[axis] = parseFloat(el.value);
+                    this.lightSpherical[key] = parseFloat(el.value);
                 });
+                // initialize slider value
+                el.value = this.lightSpherical[key];
             }
         };
-        bind('light-x', 'x');
-        bind('light-y', 'y');
-        bind('light-z', 'z');
+        bind('light-radius', 'radius');
+        bind('light-theta', 'theta');
+        bind('light-phi', 'phi');
     }
     
     reset() {
@@ -201,12 +204,22 @@ class Character3DApp {
         const distElem = document.getElementById('distance');
         if (distElem) distElem.textContent = this.totalDistance.toFixed(2);
 
+        const r = this.lightSpherical.radius;
+        const theta = radians(this.lightSpherical.theta);
+        const phi = radians(this.lightSpherical.phi);
+        const offset = vec3(
+            r * Math.sin(phi) * Math.cos(theta),
+            r * Math.cos(phi),
+            r * Math.sin(phi) * Math.sin(theta)
+        );
+
         const lightPos = vec4(
-            charPos[0] + this.lightOffsets.x,
-            charPos[1] + this.lightOffsets.y,
-            charPos[2] + this.lightOffsets.z,
+            charPos[0] + offset[0],
+            charPos[1] + offset[1],
+            charPos[2] + offset[2],
             1.0
         );
+        this.currentLightPos = lightPos;
         this.renderer.updateLightPosition(lightPos);
 
         // GroundManager 업데이트: 개구리의 z위치를 넘겨줌
@@ -240,6 +253,20 @@ class Character3DApp {
         //this.ground.render(viewMatrix);
         this.groundManager.render(viewMatrix);
         this.character.render(viewMatrix);
+
+        // Draw light indicator
+        if (this.currentLightPos) {
+            const indicatorMatrix = mult(viewMatrix, translate(
+                this.currentLightPos[0],
+                this.currentLightPos[1],
+                this.currentLightPos[2]
+            ));
+            this.renderer.pushMatrix(indicatorMatrix);
+            this.renderer.setLightMarkerMaterial();
+            this.renderer.drawBox(0.3, 0.3, 0.3, indicatorMatrix);
+            this.renderer.popMatrix();
+            this.renderer.setFrogMaterial();
+        }
     }
     
     gameLoop() {

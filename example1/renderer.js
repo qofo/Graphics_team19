@@ -146,6 +146,24 @@ class WebGLRenderer {
         this.gl.uniform1f(this.uniformLocations.shininess, shininess);
     }
 
+    setLightMarkerMaterial() {
+        const { lighting } = CONFIG;
+        const material = {
+            ambient: [1.0, 1.0, 1.0, 1.0],
+            diffuse: [1.0, 1.0, 0.0, 1.0],
+            specular: [1.0, 1.0, 1.0, 1.0],
+            shininess: 50.0
+        };
+
+        this.gl.uniform4fv(this.uniformLocations.ambientProduct,
+            flatten(mult(vec4(...lighting.ambient), vec4(...material.ambient))));
+        this.gl.uniform4fv(this.uniformLocations.diffuseProduct,
+            flatten(mult(vec4(...lighting.diffuse), vec4(...material.diffuse))));
+        this.gl.uniform4fv(this.uniformLocations.specularProduct,
+            flatten(mult(vec4(...lighting.specular), vec4(...material.specular))));
+        this.gl.uniform1f(this.uniformLocations.shininess, material.shininess);
+    }
+
 
     initFrogTexture(image) {
         const texture = this.gl.createTexture();
