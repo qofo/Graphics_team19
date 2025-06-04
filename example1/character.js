@@ -55,7 +55,7 @@ class Character3D {
             offsets.forEach(x => {
                 const toeTransform = mult(
                     limbTransform,
-                    translate(x, -footHeight / 2, -width / 2 - toeCfg.length / 2)
+                    translate(x, 0, width / 2 + toeCfg.length / 2)
                 );
                 this.renderer.drawBox(
                     toeCfg.width,
