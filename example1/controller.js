@@ -54,29 +54,18 @@ class PhysicsSystem {
         const vy = v0 * Math.sin(radX);
         const v_horizontal = v0 * Math.cos(radX);
 
-        const x = v_horizontal * Math.cos(radY) * time;
-        const z = v_horizontal * Math.sin(radY) * time;
-        const y = vy * time - 0.5 * this.gravity * time * time;
-
-        return vec3(z, y, x);
-    }
-
-    
     computeOrientation(time) {
         const vx = this.initialVelocity.x;
         const vy = this.initialVelocity.y - this.gravity * time;
-        if (vx === 0) return 0;
-        return this.radiansToDegrees(Math.atan2(vy, vx));
-    }
-    
-    getApexTime(torsoX) {
         const v = this.initialVelocity;
         const v0 = Math.sqrt(v.x * v.x + v.y * v.y);
 
-        const radX = (-torsoX+60) * Math.PI / 180;
+        this.jumpOrigin = vec3(0, 0, 0);
 
-        const vy = v0 * Math.sin(radX);
-        return Math.abs(vy / this.gravity);
+            return this.jumpOrigin;
+        const torsoX = this.jointController.getAngle("torsoX");
+        const torsoY = this.jointController.getAngle("torsoY");
+            return this.physicsSystem.computeOrientation(this.jumpTime);
     }
     
     radiansToDegrees(radians) {
@@ -91,82 +80,82 @@ class AnimationController {
         this.physicsSystem = physicsSystem;
         this.isJumping = false;
         this.jumpTime = 0;
-        this.jumpOrigin = vec3(0, 0, 0);
+        this.jumpOrigin = vec3(0, FOOT_OFFSET, -50);
         this.jumpDirection = 1;
+
+        // Landing state variables
         this.isLanding = false;
         this.landingTime = 0;
-        this.landingDuration = 0.2;
-        this.landingStartAngles = null;
+        this.landingDuration = 0.3;
+        this.landingStartAngles = { ...CONFIG.initialJointAngles };
     }
-
+    
     update() {
-        if (this.isLanding) {
+        if (this.isJumping) {
+            this.jumpTime += this.physicsSystem.timeStep;
+
+            const torsoX = this.jointController.getAngle('torsoX');
+            const torsoY = this.jointController.getAngle('torsoY');
+            const apexTime = this.physicsSystem.getApexTime(torsoX);
+
+            this.jumpDirection = this.jumpTime < apexTime ? 1 : -1;
+
+            this.jointController.updateJumpAngles(this.jumpDirection);
+
+            // landing detection handled in app.js
+
+            const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
+
+            const time = Math.floor(this.jumpTime * 20);
+            // console logging removed
+        } else if (this.isLanding) {
             this.landingTime += this.physicsSystem.timeStep;
             const t = Math.min(1, this.landingTime / this.landingDuration);
-            const target = CONFIG.initialJointAngles;
 
-            for (const joint in target) {
+            for (const joint in CONFIG.initialJointAngles) {
                 const start = this.landingStartAngles[joint];
-                this.jointController.angles[joint] =
-                    start + (target[joint] - start) * t;
+                const end = CONFIG.initialJointAngles[joint];
+                this.jointController.angles[joint] = start + (end - start) * t;
             }
 
             if (t >= 1) {
                 this.isLanding = false;
-                this.landingTime = 0;
-                this.landingStartAngles = null;
                 this.jointController.angles = { ...CONFIG.initialJointAngles };
-                this.jumpTime = 0;
             }
+        } else {
             return;
         }
-
-        if (!this.isJumping) return;
-        
-        this.jumpTime += this.physicsSystem.timeStep;
-        
-        const torsoX = this.jointController.getAngle('torsoX');
-        const torsoY = this.jointController.getAngle('torsoY');
-        const apexTime = this.physicsSystem.getApexTime(torsoX);
-
-        this.jumpDirection = this.jumpTime < apexTime ? 1 : -1;
-        
-        this.jointController.updateJumpAngles(this.jumpDirection);
-        
-        // Check for landing
-
-        const currentPos = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
-        
-        const time = Math.floor(this.jumpTime * 20);
-        // if (Math.floor(time) % 25 === 0)
-        //     //console.log("time:", time, "angle:", torsoX, "pos:", currentPos);
-
-        // if (this.jumpTime > 2 * apexTime) {
-        //     this.jumpOrigin = add(this.jumpOrigin, currentPos);
-        //     this.jumpTime = 0;
-        //     this.isJumping = false; // Uncomment to stop after one jump
-
-        //     this.jointController.angles = { ...CONFIG.initialJointAngles};
-        //     this.jointController.angles.torsoX = torsoX;
-        //     this.jointController.angles.torsoY = torsoY;
-
-        //     //console.log(currentPos);
-        // }
     }
     
     getCurrentPosition() {
+        if (this.isLanding || !this.isJumping) {
+            const torsoX = this.jointController.getAngle('torsoX');
+            const rad = torsoX * Math.PI / 180;
+            const y = FOOT_OFFSET * Math.cos(rad);
+            return vec3(this.jumpOrigin[0], y, this.jumpOrigin[2]);
+        }
+
         const torsoX = this.jointController.getAngle('torsoX');
         const torsoY = this.jointController.getAngle('torsoY');
         const offset = this.physicsSystem.computePosition(this.jumpTime, torsoX, torsoY);
         return add(this.jumpOrigin, offset);
     }
-    
+
     getCurrentOrientation() {
-        return this.physicsSystem.computeOrientation(this.jumpTime);
+        if (this.isJumping) {
+            const torsoX = this.jointController.getAngle('torsoX');
+            return this.physicsSystem.computeOrientation(this.jumpTime, torsoX);
+        }
+        return 0;
     }
     
     triggerJump() {
-        if (!this.isJumping) {
+        if (!this.isJumping && !this.isLanding) {
+            const torsoX = this.jointController.getAngle('torsoX');
+            const rad = torsoX * Math.PI / 180;
+            const y = FOOT_OFFSET * Math.cos(rad);
+            this.jumpOrigin = vec3(this.jumpOrigin[0], y, this.jumpOrigin[2]);
+
             this.isJumping = true;
             this.jumpTime = 0;
         }
@@ -176,9 +165,8 @@ class AnimationController {
         this.isJumping = false;
         this.isLanding = true;
         this.landingTime = 0;
-        this.landingStartAngles = { ...this.jointController.angles };
         this.jumpOrigin = vec3(...position);
-        this.jumpTime = 0;
+        this.landingStartAngles = { ...this.jointController.angles };
     }
 }
 

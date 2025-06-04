@@ -48,8 +48,9 @@
 - Torso 	
 	- right upper leg – right lower leg – right foot
 	- left upper leg – left lower leg – left foot
-	- head
-	- left upper arm – left lower arm – (hand?)
-	- right upper arm – right lower arm – (hand?)
+	- head 	- left eye
+		- right eye
+	- left upper arm – left lower arm
+	- right upper arm – right lower arm
 
 Each of them has just 1 Degree of Freedom.
