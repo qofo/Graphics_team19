@@ -47,6 +47,12 @@ class WebGLRenderer {
         this.matrixStack = [];
         this.numVertices = 36;
         this.frogTexture = null;
+
+        this.shadowFramebuffer = null;
+        this.shadowTexture = null;
+
+        // Extension handles
+        this.depthTextureExt = null;
         
         // Matrix uniform locations
         this.uniformLocations = {};
@@ -54,6 +60,7 @@ class WebGLRenderer {
         // Geometry data
         this.pointsArray = [];
         this.normalsArray = [];
+        this.texCoordsArray = [];
     }
     
     initWebGL() {
@@ -213,6 +220,50 @@ class WebGLRenderer {
     
     popMatrix() {
         return this.matrixStack.pop();
+    }
+
+    initShadowMap(size = 1024) {
+        const gl = this.gl;
+
+        const ext = gl.getExtension('WEBGL_depth_texture');
+        if (!ext) {
+            throw new Error('WEBGL_depth_texture extension not supported');
+        }
+        this.depthTextureExt = ext;
+
+        const fb = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+
+        const depthTex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, depthTex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        let internalFormat = gl.DEPTH_COMPONENT;
+        let type = gl.UNSIGNED_INT;
+        let attachment = gl.DEPTH_ATTACHMENT;
+        if (ext.UNSIGNED_INT_24_8_WEBGL) {
+            internalFormat = gl.DEPTH_STENCIL;
+            type = ext.UNSIGNED_INT_24_8_WEBGL;
+            attachment = gl.DEPTH_STENCIL_ATTACHMENT;
+        }
+        gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, size, size, 0,
+                      internalFormat, type, null);
+
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachment,
+                                gl.TEXTURE_2D, depthTex, 0);
+
+        const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status !== gl.FRAMEBUFFER_COMPLETE) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            throw new Error('Shadow framebuffer incomplete: ' + status);
+        }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        this.shadowFramebuffer = fb;
+        this.shadowTexture = depthTex;
     }
 
     updateLightPosition(position) {

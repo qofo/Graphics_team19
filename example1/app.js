@@ -95,6 +95,7 @@ class Character3DApp {
         this.renderer.initShaders();
         this.renderer.setupBuffers();
         this.renderer.setupLighting();
+        this.renderer.initShadowMap();
 
         // Texture Load
         const image = new Image();
