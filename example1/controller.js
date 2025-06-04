@@ -52,11 +52,11 @@ class PhysicsSystem {
         const vy = v0 * Math.sin(radX);
         const v_horizontal = v0 * Math.cos(radX);
 
-        const x = v_horizontal * Math.cos(radY) * time;
-        const z = v_horizontal * Math.sin(radY) * time;
+        const z = v_horizontal * Math.cos(radY) * time;
+        const x = v_horizontal * Math.sin(radY) * time;
         const y = vy * time - 0.5 * this.gravity * time * time;
 
-        return vec3(z, y, x);
+        return vec3(x, y, z);
     }
 
     
