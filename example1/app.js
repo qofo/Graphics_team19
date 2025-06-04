@@ -212,10 +212,11 @@ class Character3DApp {
         const groundHeight = this.groundManager.getGroundHeightAt(charPos[0], charPos[2]);
 
         if (groundHeight !== null && charPos[1] <= groundHeight) {
-            // 착지 - use landing state
-            this.animationController.startLanding([
-                charPos[0], groundHeight, charPos[2]
-            ]);
+            // 착지
+            this.animationController.isJumping = false;
+            this.animationController.jumpTime = 0;
+            this.animationController.jumpOrigin = vec3(charPos[0], groundHeight, charPos[2]);
+            //this.jointController.angles = { ...CONFIG.initialJointAngles };
         } else if (charPos[1] < -10.0) {
             // 낙사
             alert("Game Over");
