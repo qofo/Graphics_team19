@@ -60,9 +60,15 @@ class PhysicsSystem {
     }
 
     
-    computeOrientation(time) {
-        const vx = this.initialVelocity.x;
-        const vy = this.initialVelocity.y - this.gravity * time;
+    computeOrientation(time, torsoX) {
+        const v = this.initialVelocity;
+        const v0 = Math.sqrt(v.x * v.x + v.y * v.y);
+
+        const radX = (-torsoX + 60) * Math.PI / 180;
+
+        const vy = v0 * Math.sin(radX) - this.gravity * time;
+        const vx = v0 * Math.cos(radX);
+
         if (vx === 0) return 0;
         return this.radiansToDegrees(Math.atan2(vy, vx));
     }
@@ -149,7 +155,8 @@ class AnimationController {
 
     getCurrentOrientation() {
         if (this.isJumping) {
-            return this.physicsSystem.computeOrientation(this.jumpTime);
+            const torsoX = this.jointController.getAngle('torsoX');
+            return this.physicsSystem.computeOrientation(this.jumpTime, torsoX);
         }
         return 0;
     }
