@@ -214,7 +214,12 @@ class Character3DApp {
 
         const groundHeight = this.groundManager.getGroundHeightAt(charPos[0], charPos[2]);
 
-        if (groundHeight !== null && charPos[1] <= groundHeight) {
+        if (
+            groundHeight !== null &&
+            charPos[1] <= groundHeight &&
+            this.animationController.isJumping &&
+            !this.animationController.isLanding
+        ) {
             // 착지 - use landing state
             this.animationController.startLanding([
                 charPos[0], groundHeight, charPos[2]
