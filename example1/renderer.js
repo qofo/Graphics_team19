@@ -137,7 +137,11 @@ class WebGLRenderer {
     popMatrix() {
         return this.matrixStack.pop();
     }
-    
+
+    updateLightPosition(position) {
+        this.gl.uniform4fv(this.uniformLocations.lightPosition, flatten(position));
+    }
+
     clear() {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
