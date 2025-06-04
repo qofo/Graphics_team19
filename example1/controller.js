@@ -144,7 +144,10 @@ class AnimationController {
     
     getCurrentPosition() {
         if (this.isLanding || !this.isJumping) {
-            return this.jumpOrigin;
+            const torsoX = this.jointController.getAngle('torsoX');
+            const rad = torsoX * Math.PI / 180;
+            const y = FOOT_OFFSET * Math.cos(rad);
+            return vec3(this.jumpOrigin[0], y, this.jumpOrigin[2]);
         }
 
         const torsoX = this.jointController.getAngle('torsoX');
@@ -163,6 +166,11 @@ class AnimationController {
     
     triggerJump() {
         if (!this.isJumping && !this.isLanding) {
+            const torsoX = this.jointController.getAngle('torsoX');
+            const rad = torsoX * Math.PI / 180;
+            const y = FOOT_OFFSET * Math.cos(rad);
+            this.jumpOrigin = vec3(this.jumpOrigin[0], y, this.jumpOrigin[2]);
+
             this.isJumping = true;
             this.jumpTime = 0;
         }
