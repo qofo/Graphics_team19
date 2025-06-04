@@ -28,6 +28,7 @@ class Character3D {
     drawLimb(transform, upperAngle, lowerAngle, footAngle, upperLen, lowerLen) {
         const { width } = CONFIG.bodyParts.leg;
         const { height: footHeight } = CONFIG.bodyParts.foot;
+        const toeCfg = CONFIG.bodyParts.toe || { width: 0, height: 0, length: 0 };
         
         // Upper limb
         let limbTransform = mult(transform, rotateX(upperAngle));
@@ -44,6 +45,15 @@ class Character3D {
         limbTransform = mult(limbTransform, translate(0, lowerLen, 0));
         limbTransform = mult(limbTransform, rotateX(footAngle));
         this.renderer.drawBox(width, footHeight, width, limbTransform);
+
+        if (toeCfg.length > 0) {
+            const offsets = [-width / 2 + toeCfg.width / 2, 0, width / 2 - toeCfg.width / 2];
+            offsets.forEach(x => {
+                const toeTransform = mult(limbTransform,
+                    translate(x, 0, width / 2 + toeCfg.length / 2));
+                this.renderer.drawBox(toeCfg.width, toeCfg.height, toeCfg.length, toeTransform);
+            });
+        }
         
         // Restore matrices
         this.renderer.popMatrix();
@@ -64,6 +74,33 @@ class Character3D {
         this.renderer.drawBox(width, lowerHeight, width, armTransform);
         
         this.renderer.popMatrix();
+    }
+
+    setEyeMaterial() {
+        const { lighting } = CONFIG;
+        const eyeMaterial = {
+            ambient: [0.0, 0.0, 0.0, 1.0],
+            diffuse: [0.0, 0.0, 0.0, 1.0],
+            specular: [0.0, 0.0, 0.0, 1.0]
+        };
+
+        this.renderer.gl.uniform4fv(this.renderer.uniformLocations.ambientProduct,
+            flatten(mult(vec4(...lighting.ambient), vec4(...eyeMaterial.ambient))));
+        this.renderer.gl.uniform4fv(this.renderer.uniformLocations.diffuseProduct,
+            flatten(mult(vec4(...lighting.diffuse), vec4(...eyeMaterial.diffuse))));
+        this.renderer.gl.uniform4fv(this.renderer.uniformLocations.specularProduct,
+            flatten(mult(vec4(...lighting.specular), vec4(...eyeMaterial.specular))));
+    }
+
+    restoreMaterial() {
+        const { lighting, material } = CONFIG;
+
+        this.renderer.gl.uniform4fv(this.renderer.uniformLocations.ambientProduct,
+            flatten(mult(vec4(...lighting.ambient), vec4(...material.ambient))));
+        this.renderer.gl.uniform4fv(this.renderer.uniformLocations.diffuseProduct,
+            flatten(mult(vec4(...lighting.diffuse), vec4(...material.diffuse))));
+        this.renderer.gl.uniform4fv(this.renderer.uniformLocations.specularProduct,
+            flatten(mult(vec4(...lighting.specular), vec4(...material.specular))));
     }
     
     render(viewMatrix) {
@@ -89,8 +126,10 @@ class Character3D {
         this.renderer.drawBox(head.width, head.height, head.depth, headTransform);
         
         // Draw eyes
+        this.setEyeMaterial();
         this.drawEye(-0.5, headTransform);
         this.drawEye(0.5, headTransform);
+        this.restoreMaterial();
         
         this.renderer.popMatrix();
         
