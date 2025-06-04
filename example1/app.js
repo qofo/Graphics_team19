@@ -49,8 +49,11 @@ const CONFIG = {
     }
 };
 
-// Offset from torso base to ground so that feet rest on the floor
-const FOOT_OFFSET = 2.5;
+// Offset from torso base to ground so that the feet touch the floor.
+// Calculated from default leg segment lengths and angles
+// upper(3.5) + lower(3.0) + foot(3.0) with angles 110,150,-150
+// gives roughly 2.74 units of vertical offset.
+const FOOT_OFFSET = 2.74;
 
 // Main Application class
 class Character3DApp {
