@@ -290,7 +290,8 @@ class Character3D {
     constructor(renderer, jointController) {
         this.renderer = renderer;
         this.jointController = jointController;
-        this.position = vec3(0, 0, -50);
+        // Spawn the character at the origin.
+        this.position = vec3(0, 0, 0);
         this.orientation = 0;
     }
     
