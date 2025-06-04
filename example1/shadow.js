@@ -1,3 +1,4 @@
+// Minimal ray tracing routine used for the shadow example
 function trace(p, d, step)
 {
     color local, reflected, transmitted;

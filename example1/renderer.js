@@ -1,4 +1,6 @@
 "use strict";
+
+// WebGL renderer handling geometry, textures and lighting
 // Create scaling matrix manually
 function scale4(sx, sy, sz) {
     return mat4(

@@ -1,3 +1,4 @@
+// Renders the frog model using joint angles from the controller
 
 // Character class for rendering the 3D character
 class Character3D {

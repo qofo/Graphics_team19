@@ -29,6 +29,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Utility functions for initializing and working with WebGL
+
 
 /**
  * @fileoverview This file contains functions every webgl program will need
