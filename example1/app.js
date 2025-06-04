@@ -53,12 +53,6 @@ const CONFIG = {
 // Calculated from default leg segment lengths and angles
 // upper(3.5) + lower(3.0) + foot(3.0) with angles 110,150,-150
 // gives roughly 2.74 units of vertical offset.
-const FOOT_OFFSET = 2.74;
-
-// Main Application class
-class Character3DApp {
-    constructor(canvasId) {
-        try {
             // Initialize core systems
             this.renderer = new WebGLRenderer(canvasId);
             this.jointController = new JointController();
@@ -158,11 +152,11 @@ class Character3DApp {
     
     reset() {
         this.animationController.jumpTime = 0;
-        this.animationController.jumpOrigin = vec3(0, FOOT_OFFSET, -50);
+        this.animationController.jumpOrigin = vec3(0, 0, 0);
         this.animationController.isJumping = false;
 
         this.jointController.angles = { ...CONFIG.initialJointAngles };
-        this.character.position = vec3(0, FOOT_OFFSET, -50);
+        this.character.position = vec3(0, 0, -50);
 
         this.totalDistance = 0;
         this.lastZ = this.character.position[2];
@@ -217,20 +211,19 @@ class Character3DApp {
 
         const groundHeight = this.groundManager.getGroundHeightAt(charPos[0], charPos[2]);
 
-        if (groundHeight !== null && charPos[1] - FOOT_OFFSET <= groundHeight) {
+        if (groundHeight !== null && charPos[1] <= groundHeight) {
             // 착지 - use landing state
             if (this.animationController.isJumping && !this.animationController.isLanding) {
                 this.animationController.startLanding([
-                    charPos[0], groundHeight + FOOT_OFFSET, charPos[2]
+                    charPos[0], groundHeight, charPos[2]
                 ]);
             }
-        } else if (charPos[1] - FOOT_OFFSET < -10.0) {
+        } else if (charPos[1] < -10.0) {
             // 낙사
             alert("Game Over");
             this.reset();
         }
     }
-    
     render() {
         this.renderer.clear();
         

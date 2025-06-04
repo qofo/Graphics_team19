@@ -4,8 +4,7 @@ class Character3D {
     constructor(renderer, jointController) {
         this.renderer = renderer;
         this.jointController = jointController;
-        // Initialize so the feet rest on the ground before reset()
-        this.position = vec3(0, typeof FOOT_OFFSET !== 'undefined' ? FOOT_OFFSET : 0, -50);
+        this.position = vec3(0, 0, -50);
         this.orientation = 0;
     }
     

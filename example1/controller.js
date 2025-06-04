@@ -52,35 +52,18 @@ class PhysicsSystem {
         const vy = v0 * Math.sin(radX);
         const v_horizontal = v0 * Math.cos(radX);
 
-        const z = v_horizontal * Math.cos(radY) * time;
-        const x = v_horizontal * Math.sin(radY) * time;
-        const y = vy * time - 0.5 * this.gravity * time * time;
-
-        return vec3(x, y, z);
-    }
-
-    
-    computeOrientation(time, torsoX) {
+    computeOrientation(time) {
+        const vx = this.initialVelocity.x;
+        const vy = this.initialVelocity.y - this.gravity * time;
         const v = this.initialVelocity;
         const v0 = Math.sqrt(v.x * v.x + v.y * v.y);
 
-        const radX = (-torsoX + 60) * Math.PI / 180;
+        this.jumpOrigin = vec3(0, 0, 0);
 
-        const vy = v0 * Math.sin(radX) - this.gravity * time;
-        const vx = v0 * Math.cos(radX);
-
-        if (vx === 0) return 0;
-        return this.radiansToDegrees(Math.atan2(vy, vx));
-    }
-    
-    getApexTime(torsoX) {
-        const v = this.initialVelocity;
-        const v0 = Math.sqrt(v.x * v.x + v.y * v.y);
-
-        const radX = (-torsoX+60) * Math.PI / 180;
-
-        const vy = v0 * Math.sin(radX);
-        return Math.abs(vy / this.gravity);
+            return this.jumpOrigin;
+        const torsoX = this.jointController.getAngle("torsoX");
+        const torsoY = this.jointController.getAngle("torsoY");
+            return this.physicsSystem.computeOrientation(this.jumpTime);
     }
     
     radiansToDegrees(radians) {
