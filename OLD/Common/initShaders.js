@@ -1,4 +1,5 @@
 //
+//  Helper to compile and link WebGL shaders
 //  initShaders.js
 //
 

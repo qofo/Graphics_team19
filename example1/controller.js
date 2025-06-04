@@ -1,4 +1,6 @@
 "use strict";
+
+// Controllers for joint angles, physics, camera and input
 // Joint Controller for managing character joint angles
 class JointController {
     constructor() {

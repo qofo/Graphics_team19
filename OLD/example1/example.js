@@ -1,5 +1,7 @@
 "use strict";
 
+// Legacy frog application demonstrating hierarchical modeling
+
 // Namespace object to avoid global variable pollution
 const FrogApp = {
     gl: null,

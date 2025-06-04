@@ -1,5 +1,7 @@
 "use strict";
 
+// Application entry point controlling the main scene and character
+
 // Configuration object for centralized settings management
 const CONFIG = {
     bodyParts: {
@@ -28,9 +30,10 @@ const CONFIG = {
         shininess: 30.0
     },
     groundMaterial: {
-        ambient: [0.4, 0.25, 0.1, 1.0], // 🟤 연한 갈색 ambient
-        diffuse: [0.5, 0.3, 0.15, 1.0], // 🟤 연한 갈색 diffuse
-        specular: [0.1, 0.1, 0.1, 1.0], // 🟤 살짝 어두운 specular
+        // Light brown material for the ground
+        ambient: [0.4, 0.25, 0.1, 1.0],
+        diffuse: [0.5, 0.3, 0.15, 1.0],
+        specular: [0.1, 0.1, 0.1, 1.0],
         shininess: 10.0
     },
     camera: {

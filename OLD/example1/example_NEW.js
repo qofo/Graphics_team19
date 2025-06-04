@@ -1,5 +1,7 @@
 "use strict";
 
+// Updated frog example with a modular structure
+
 // Configuration object for centralized settings management
 const CONFIG = {
     bodyParts: {
