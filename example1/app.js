@@ -156,7 +156,10 @@ class Character3DApp {
         this.animationController.isJumping = false;
 
         this.jointController.angles = { ...CONFIG.initialJointAngles };
-        this.character.position = vec3(0, 0, -50);
+        // Place the character at the origin so that it begins on the first
+        // ground tile.  Starting behind the generated ground caused the jump
+        // to immediately fail.
+        this.character.position = vec3(0, 0, 0);
 
         this.totalDistance = 0;
         this.lastZ = this.character.position[2];
