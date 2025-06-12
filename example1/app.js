@@ -52,10 +52,10 @@ const CONFIG = {
     }
 };
 
-// Main Application class
-class Character3DApp {
-    constructor(canvasId) {
-        try {
+// Offset from torso base to ground so that the feet touch the floor.
+// Calculated from default leg segment lengths and angles
+// upper(3.5) + lower(3.0) + foot(3.0) with angles 110,150,-150
+// gives roughly 2.74 units of vertical offset.
             // Initialize core systems
             this.renderer = new WebGLRenderer(canvasId);
             this.jointController = new JointController();
@@ -237,16 +237,17 @@ class Character3DApp {
             !this.animationController.isLanding
         ) {
             // 착지 - use landing state
-            this.animationController.startLanding([
-                charPos[0], groundHeight, charPos[2]
-            ]);
+            if (this.animationController.isJumping && !this.animationController.isLanding) {
+                this.animationController.startLanding([
+                    charPos[0], groundHeight, charPos[2]
+                ]);
+            }
         } else if (charPos[1] < -10.0) {
             // 낙사
             alert("Game Over");
             this.reset();
         }
     }
-    
     render() {
         this.renderer.clear();
         
